@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "ARFI/version"
+require_relative 'ARFI/version'
 
 module ARFI
   class Error < StandardError; end
