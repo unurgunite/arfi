@@ -1,24 +1,24 @@
 # frozen_string_literal: true
 
-require_relative 'lib/ARFI/version'
+require_relative 'lib/arfi/version'
 
 Gem::Specification.new do |spec|
-  spec.name = 'ARFI'
-  spec.version = ARFI::VERSION
+  spec.name = 'arfi'
+  spec.version = Arfi::VERSION
   spec.authors = ['unurgunite']
   spec.email = ['senpaiguru1488@gmail.com']
 
   spec.summary = 'ActiveRecord Functional Indexes.'
   spec.description = 'Bring the ability to create and maintain functional indexes without transition to structure.sql.'
-  spec.homepage = 'https://github.com/unurgunite/ARFI'
+  spec.homepage = 'https://github.com/unurgunite/arfi'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.1.0'
 
   spec.metadata['allowed_push_host'] = "TODO: Set to your gem server 'https://example.com'"
 
   spec.metadata['homepage_uri'] = spec.homepage
-  spec.metadata['source_code_uri'] = 'https://github.com/unurgunite/ARFI'
-  spec.metadata['changelog_uri'] = 'https://github.com/unurgunite/ARFI/CHANGELOG.md'
+  spec.metadata['source_code_uri'] = 'https://github.com/unurgunite/arfi'
+  spec.metadata['changelog_uri'] = 'https://github.com/unurgunite/arfi/CHANGELOG.md'
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.

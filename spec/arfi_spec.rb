@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-RSpec.describe ARFI do
+RSpec.describe Arfi do
   it 'has a version number' do
-    expect(ARFI::VERSION).not_to be nil
+    expect(Arfi::VERSION).not_to be nil
   end
 
   it 'does something useful' do

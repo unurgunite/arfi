@@ -38,9 +38,9 @@ push git commits and the created tag, and push the `.gem` file to [rubygems.org]
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/ARFI. This project is intended to
+Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/Arfi. This project is intended to
 be a safe, welcoming space for collaboration, and contributors are expected to adhere to
-the [code of conduct](https://github.com/[USERNAME]/ARFI/blob/master/CODE_OF_CONDUCT.md).
+the [code of conduct](https://github.com/[USERNAME]/Arfi/blob/master/CODE_OF_CONDUCT.md).
 
 ## License
 
@@ -48,5 +48,5 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the ARFI project's codebases, issue trackers, chat rooms and mailing lists is expected to follow
-the [code of conduct](https://github.com/[USERNAME]/ARFI/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the Arfi project's codebases, issue trackers, chat rooms and mailing lists is expected to follow
+the [code of conduct](https://github.com/[USERNAME]/Arfi/blob/master/CODE_OF_CONDUCT.md).

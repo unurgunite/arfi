@@ -4,4 +4,4 @@
 require 'thor'
 require_relative '../lib/arfi/cli'
 
-ARFI::CLI.start(ARGV)
+Arfi::CLI.start(ARGV)
