@@ -9,7 +9,7 @@ module Arfi
     desc 'init:project', 'Initialize the project'
     subcommand 'init:project', Commands::Project
 
-    desc 'init:f_idx', 'Initialize the functional index'
-    subcommand 'init:f_idx', Commands::FIdx
+    desc 'f_idx [COMMAND]', 'Command to handle functional indexes.'
+    subcommand 'f_idx', Commands::FIdx
   end
 end
