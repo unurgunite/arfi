@@ -2,21 +2,24 @@
 
 require 'thor'
 require 'fileutils'
+require 'rails'
 
 module Arfi
   module Commands
     class Project < Thor
       desc 'create', 'Initialize project by creating db/functions directory'
-
       def create
-        unless defined?(Rails) && Rails.respond_to?(:root)
-          puts 'Error: Rails is not loaded. Are you running this inside a Rails project?'
-          exit(1)
-        end
+        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby
+        return puts "Directory #{functions_dir} already exists" if Dir.exist?(functions_dir)
 
-        functions_dir = Rails.root.join('db/functions')
         FileUtils.mkdir_p(functions_dir)
         puts "Created: #{functions_dir}"
+      end
+
+      private
+
+      def functions_dir
+        Rails.root.join('db/functions')
       end
     end
   end
