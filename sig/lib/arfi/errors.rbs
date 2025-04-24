@@ -1,0 +1,15 @@
+module Arfi
+  module Errors
+    class NoFunctionsDir < StandardError
+      @message: string
+
+      def initialize: (?::String message) -> void
+    end
+
+    class InvalidSchemaFormat < StandardError
+      @message: string
+
+      def initialize: (?::String message) -> void
+    end
+  end
+end

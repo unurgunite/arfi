@@ -1,0 +1,7 @@
+module ActiveRecord
+  class Base
+    # @param [String] function_name The name of the function to check.
+    # @return [Boolean] Returns true if the function exists, false otherwise.
+    def self.function_exists?: (string function_name) -> bool
+  end
+end

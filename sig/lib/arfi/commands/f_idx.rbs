@@ -1,14 +1,6 @@
-# frozen_string_literal: true
-
-require 'thor'
-require 'rails'
-require File.expand_path('config/environment', Dir.pwd)
-
 module Arfi
   module Commands
-    # +Arfi::Commands::FIdx+ module contains commands for manipulating functional index in Rails project.
     class FIdx < Thor
-      desc 'create INDEX_NAME', 'Initialize the functional index'
       # +Arfi::Commands::FIdx#create+                        -> void
       #
       # This command is used to create the functional index.
@@ -20,13 +12,8 @@ module Arfi
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
       # @raise [Arfi::Errors::NoFunctionsDir] if there is no `db/functions` directory
       # @see Arfi::Commands::FIdx#validate_schema_format!
-      def create(index_name)
-        validate_schema_format!
-        content = build_sql_function(index_name)
-        create_index_file(index_name, content)
-      end
+      def create: (string index_name) -> untyped
 
-      desc 'destroy INDEX_NAME [REVISION]', 'Delete the functional index'
       # +Arfi::Commands::FIdx#destroy+                        -> void
       #
       # This command is used to delete the functional index.
@@ -37,12 +24,7 @@ module Arfi
       # @param revision [Integer] Revision of the index.
       # @return [void]
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
-      def destroy(index_name, revision = 1)
-        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby
-
-        FileUtils.rm("#{functions_dir}/#{index_name}_v#{revision}.sql")
-        puts "Deleted: #{functions_dir}/#{index_name}_v#{revision}.sql"
-      end
+      def destroy: (string index_name, ?::Integer revision) -> untyped
 
       private
 
@@ -53,9 +35,7 @@ module Arfi
       # @!visibility private
       # @private
       # @return [Pathname] Path to `db/functions` directory
-      def functions_dir
-        Rails.root.join('db/functions')
-      end
+      def functions_dir: () -> Pathname
 
       # +Arfi::Commands::FIdx#validate_schema_format!+                        -> void
       #
@@ -65,9 +45,7 @@ module Arfi
       # @private
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby.
       # @return [nil] if the schema format is valid.
-      def validate_schema_format!
-        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby
-      end
+      def validate_schema_format!: () -> (untyped | nil)
 
       # +Arfi::Commands::FIdx#build_sql_function+                        -> String
       #
@@ -77,16 +55,7 @@ module Arfi
       # @private
       # @param index_name [String] Name of the index.
       # @return [String] SQL function body.
-      def build_sql_function(index_name)
-        <<~SQL
-          CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
-              LANGUAGE SQL
-              IMMUTABLE AS
-          $$
-              -- Function body here
-          $$
-        SQL
-      end
+      def build_sql_function: (string index_name) -> ::String
 
       # +Arfi::Commands::FIdx#create_index_file+                        -> void
       #
@@ -97,16 +66,9 @@ module Arfi
       # @param index_name [String] Name of the index.
       # @param content [String] SQL function body.
       # @return [void]
-      def create_index_file(index_name, content)
-        existing_files = Dir.glob("#{functions_dir}/#{index_name}*.sql")
+      def create_index_file: (string index_name, string content) -> untyped
 
-        return write_file(index_name, content, 1) if existing_files.empty?
-
-        latest_version = extract_latest_version(existing_files)
-        write_file(index_name, content, latest_version.next)
-      end
-
-      # +Arfi::Commands::FIdx#extract_latest_version+                        -> Integer
+      # +Arfi::Commands::FIdx#extract_latest_version+                        -> String
       #
       # Helper method to extract the latest version of the index.
       #
@@ -114,13 +76,7 @@ module Arfi
       # @private
       # @param files [Array<String>] List of files.
       # @return [String] Latest version of the index.
-      def extract_latest_version(files)
-        version_numbers = files.map do |file|
-          File.basename(file)[/\w+_v(\d+)\.sql/, 1]
-        end.compact
-
-        version_numbers.max
-      end
+      def extract_latest_version: (Array[String] files) -> string
 
       # +Arfi::Commands::FIdx#write_file+                        -> void
       #
@@ -132,12 +88,7 @@ module Arfi
       # @param content [String] SQL function body.
       # @param version [Integer] Version of the index.
       # @return [void]
-      def write_file(index_name, content, version)
-        version_str = format('%02d', version)
-        path = "#{functions_dir}/#{index_name}_v#{version_str}.sql"
-        File.write(path, content)
-        puts "Created: #{path}"
-      end
+      def write_file: (string index_name, string content, ::Integer version) -> untyped
     end
   end
 end

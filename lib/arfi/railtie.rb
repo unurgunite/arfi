@@ -4,7 +4,7 @@ require 'arfi'
 require 'rails'
 
 module Arfi
-  class Railtie < ::Rails::Railtie
+  class Railtie < ::Rails::Railtie # :nodoc:
     railtie_name :arfi
 
     rake_tasks do

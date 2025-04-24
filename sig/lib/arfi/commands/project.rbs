@@ -1,0 +1,14 @@
+module Arfi
+  module Commands
+    class Project < Thor
+      # @return [void]
+      def create: () -> void
+
+      private
+
+      # @private
+      # @return [Pathname] Path to `db/functions` directory
+      def functions_dir: () -> Pathname
+    end
+  end
+end
