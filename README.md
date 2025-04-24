@@ -2,6 +2,15 @@
 
 ![Alt](https://repobeats.axiom.co/api/embed/324b4f481b219890ef5a26e3c6fb73fff8929c93.svg "Repobeats analytics image")
 
+---
+
+**! WARNING !**
+
+This project supports only PostgreSQL databases. In near future, ARFI will support MySQL databases. Since SQLite3 does
+not support functional indexes with custom functions, this project won't support SQLite3 databases in near future.
+
+---
+
 ARFI – *ActiveRecord Functional Indexes*
 
 ARFI gem brings you the ability to create and maintain functional indexes for your ActiveRecord models without
@@ -82,6 +91,15 @@ ARFI is built on top of the following gems:
 | Thor         | For CLI development.                                                                       |
 | Rubocop      | For static code analysis.                                                                  |
 | Rake         | For patching built-in Rails Rake tasks.                                                    |
+
+## Roadmap
+
+| Task           | Completed |
+|----------------|-----------|
+| db:migrate     | [x]       |
+| db:setup       | []        |
+| db:prepare     | []        |
+| db:schema:load | []        |
 
 ## Contributing
 
