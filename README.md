@@ -1,44 +1,91 @@
 # ARFI
 
+![Alt](https://repobeats.axiom.co/api/embed/324b4f481b219890ef5a26e3c6fb73fff8929c93.svg "Repobeats analytics image")
+
 ARFI – *ActiveRecord Functional Indexes*
 
 ARFI gem brings you the ability to create and maintain functional indexes for your ActiveRecord models without
-transition to structure.sql (SQL-based schema).
+transition to `structure.sql` (SQL-based schema).
+
+* [ARFI](#arfi)
+    * [Installation](#installation)
+    * [Usage](#usage)
+        * [CLI](#cli)
+        * [Project creation](#project-creation)
+        * [Index creation](#index-creation)
+        * [Index destroy](#index-destroy)
+        * [Additional help](#additional-help)
+    * [Development](#development)
+        * [Build from source](#build-from-source)
+    * [Requirements](#requirements)
+    * [Contributing](#contributing)
+    * [License](#license)
+    * [Code of Conduct](#code-of-conduct)
 
 ## Installation
-
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after
-releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section
-with instructions to install your gem from git if you don't plan to release to RubyGems.org.
 
 Install the gem and add to the application's Gemfile by executing:
 
 ```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
-```
-
-If bundler is not being used to manage dependencies, install the gem by executing:
-
-```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle add arfi
 ```
 
 ## Usage
 
-TODO: Write usage instructions here
+### CLI
+
+ARFI uses Thor as a command line interface (CLI) instead of Rake, so it has a specific DSL.
+
+### Project creation
+
+Firstly, run `bundle exec arfi project create` to create a new project. This command will create `db/functions`
+directory. ARFI uses `db/functions` directory to store your functional indexes.
+
+### Index creation
+
+Run `bundle exec arfi f_idx create function_name` to create a new functional index. New index will be created in
+`db/functions` directory under `function_name_v01.sql` name. Edit you index and run `bundle exec rails db:migrate`
+
+### Index destroy
+
+If you want to destroy your index, run `bundle exec arfi f_idx destroy function_name [revision (1 by default)]`
+
+### Additional help
+
+Run `bundle exec arfi` for additional help.
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can
-also run `bin/console` for an interactive prompt that will allow you to experiment.
+### Build from source
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the
-version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version,
-push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+The manual installation includes installation via command line interface. it is practically no different from what
+happens during the automatic build of the project:
+
+```shell
+git clone https://github.com/unurgunite/arfi.git
+cd arfi
+bundle install
+gem build arfi.gemspec
+gem install arfi-0.1.0.gem
+```
+
+Also, you can run `bin/setup` to automatically install everything needed.
+
+## Requirements
+
+ARFI is built on top of the following gems:
+
+| Dependencies | Description                                                                                |
+|--------------|--------------------------------------------------------------------------------------------|
+| ActiveRecord | Used to patch `ActiveRecord::Base` module with new methods.                                |
+| Rails        | Used for fetching project settings (database connection settings, Rails environment, etc.) |
+| Thor         | For CLI development.                                                                       |
+| Rubocop      | For static code analysis.                                                                  |
+| Rake         | For patching built-in Rails Rake tasks.                                                    |
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/Arfi. This project is intended to
+Bug reports and pull requests are welcome on GitHub at https://github.com/unurgunite/arfi. This project is intended to
 be a safe, welcoming space for collaboration, and contributors are expected to adhere to
 the [code of conduct](https://github.com/[USERNAME]/Arfi/blob/master/CODE_OF_CONDUCT.md).
 
