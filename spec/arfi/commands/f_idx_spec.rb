@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
-# require '../../lib/arfi/commands/f_idx'
+require_relative '../../../lib/arfi/commands/f_idx'
+
 RSpec.describe Arfi::Commands::FIdx do
-  before do
-    # Do nothing
-  end
+  # before do
+  #   allow(File).to receive(:expand_path).and_return(File::NULL)
+  #   allow(Kernel).to receive(:require).with(File::NULL)
+  # end
 
   after do
     # Do nothing
