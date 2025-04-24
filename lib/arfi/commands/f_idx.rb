@@ -34,11 +34,13 @@ module Arfi
       # @example
       #   bundle exec arfi f_idx destroy some_function [revision index (just an integer, 1 is by default)]
       # @param index_name [String] Name of the index.
-      # @param revision [Integer] Revision of the index.
+      # @param revision [String] Revision of the index.
       # @return [void]
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
-      def destroy(index_name, revision = 1)
+      def destroy(index_name, revision = '01')
         validate_schema_format!
+
+        revision = "0#{revision}" if revision.match?(/^\d$/)
         FileUtils.rm("#{functions_dir}/#{index_name}_v#{revision}.sql")
         puts "Deleted: #{functions_dir}/#{index_name}_v#{revision}.sql"
       end
