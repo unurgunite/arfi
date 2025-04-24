@@ -38,8 +38,7 @@ module Arfi
       # @return [void]
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
       def destroy(index_name, revision = 1)
-        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby
-
+        validate_schema_format!
         FileUtils.rm("#{functions_dir}/#{index_name}_v#{revision}.sql")
         puts "Deleted: #{functions_dir}/#{index_name}_v#{revision}.sql"
       end
