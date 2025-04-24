@@ -12,9 +12,11 @@ module Arfi
         raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby
 
         content = <<~SQL
-          CREATE OR REPLACE FUNCTION #{index_name} RETURNS TEXT[]
-            LANGUAGE SQL
-            IMMUTABLE AS
+          CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
+              LANGUAGE SQL
+              IMMUTABLE AS
+          $$
+              -- Function body here
           $$
         SQL
 
