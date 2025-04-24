@@ -5,8 +5,8 @@ source 'https://rubygems.org'
 # Specify your gem's dependencies in Arfi.gemspec
 gemspec
 
-gem 'activerecord', '~> 7.2', '>= 7.2.2.1'
-gem 'rails', '~> 7.2', '>= 7.2.2.1'
+gem 'activerecord', '~> 7.0'
+gem 'rails', '~> 7.0'
 
 gem 'irb'
 gem 'rake', '~> 13.0'
