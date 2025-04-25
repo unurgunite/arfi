@@ -2,7 +2,7 @@
 
 require_relative 'arfi/version'
 require_relative 'arfi/errors'
-require 'arfi/extensions/active_record'
+require 'arfi/extensions/extensions'
 require 'rails' if defined?(Rails)
 
 # Top level module

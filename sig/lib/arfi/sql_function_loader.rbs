@@ -1,0 +1,19 @@
+module Arfi
+  class SqlFunctionLoader
+    type db_config = {
+        user: String,
+        password: String,
+        host: String,
+        port: Integer,
+        dbname: String
+      }
+
+    def self.load!: () -> (nil | untyped)
+
+    private
+
+    def self.sql_files: () -> (Array[String] | nil)
+
+    def self.conn: (db_config db_config) -> untyped
+  end
+end
