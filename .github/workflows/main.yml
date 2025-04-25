@@ -1,21 +1,20 @@
-name: Ruby
+name: Ruby Gem CI/CD
 
 on:
   push:
     branches:
       - master
-
   pull_request:
+  workflow_dispatch:
 
 jobs:
-  build:
+  test:
+    name: Lint and Test
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
     strategy:
       matrix:
         ruby:
-          - '3.4.2'
-
+          - '3.1.2'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Ruby
@@ -23,5 +22,30 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
-      - name: Run the default task
-        run: bundle exec rake
+      - name: Install dependencies
+        run: bundle install
+      - name: Run RuboCop
+        run: bundle exec rubocop
+      - name: Run RSpec
+        run: bundle exec rspec
+
+  release:
+    name: Release Gem to RubyGems
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' # Only run on manual trigger
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1.2'
+          bundler-cache: true
+      - name: Build the gem
+        run: gem build *.gemspec
+      - name: Push to RubyGems
+        env:
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: |
+          gem install rubygems-release
+          gem push *.gem

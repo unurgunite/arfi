@@ -1,0 +1,94 @@
+module Arfi
+  module Commands
+    class FIdx < Thor
+      # +Arfi::Commands::FIdx#create+                        -> void
+      #
+      # This command is used to create the functional index.
+      #
+      # @example
+      #   bundle exec arfi f_idx create some_function
+      # @param index_name [String] Name of the index.
+      # @return [void]
+      # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
+      # @raise [Arfi::Errors::NoFunctionsDir] if there is no `db/functions` directory
+      # @see Arfi::Commands::FIdx#validate_schema_format!
+      def create: (string index_name) -> untyped
+
+      # +Arfi::Commands::FIdx#destroy+                        -> void
+      #
+      # This command is used to delete the functional index.
+      #
+      # @example
+      #   bundle exec arfi f_idx destroy some_function [revision index (just an integer, 1 is by default)]
+      # @param index_name [String] Name of the index.
+      # @param revision [String] Revision of the index.
+      # @return [void]
+      # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
+      def destroy: (string index_name, ?::String revision) -> untyped
+
+      private
+
+      # +Arfi::Commands::FIdx#functions_dir+                        -> Pathname
+      #
+      # Helper method to get path to `db/functions` directory.
+      #
+      # @!visibility private
+      # @private
+      # @return [Pathname] Path to `db/functions` directory
+      def functions_dir: () -> Pathname
+
+      # +Arfi::Commands::FIdx#validate_schema_format!+                        -> void
+      #
+      # Helper method to validate the schema format.
+      #
+      # @!visibility private
+      # @private
+      # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby.
+      # @return [nil] if the schema format is valid.
+      def validate_schema_format!: () -> (untyped | nil)
+
+      # +Arfi::Commands::FIdx#build_sql_function+                        -> String
+      #
+      # Helper method to build the SQL function.
+      #
+      # @!visibility private
+      # @private
+      # @param index_name [String] Name of the index.
+      # @return [String] SQL function body.
+      def build_sql_function: (string index_name) -> ::String
+
+      # +Arfi::Commands::FIdx#create_index_file+                        -> void
+      #
+      # Helper method to create the index file.
+      #
+      # @!visibility private
+      # @private
+      # @param index_name [String] Name of the index.
+      # @param content [String] SQL function body.
+      # @return [void]
+      def create_index_file: (string index_name, string content) -> untyped
+
+      # +Arfi::Commands::FIdx#extract_latest_version+                        -> String
+      #
+      # Helper method to extract the latest version of the index.
+      #
+      # @!visibility private
+      # @private
+      # @param files [Array<String>] List of files.
+      # @return [String] Latest version of the index.
+      def extract_latest_version: (Array[String] files) -> string
+
+      # +Arfi::Commands::FIdx#write_file+                        -> void
+      #
+      # Helper method to write the index file.
+      #
+      # @!visibility private
+      # @private
+      # @param index_name [String] Name of the index.
+      # @param content [String] SQL function body.
+      # @param version [Integer] Version of the index.
+      # @return [void]
+      def write_file: (string index_name, string content, ::Integer version) -> untyped
+    end
+  end
+end

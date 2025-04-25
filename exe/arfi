@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'thor'
+require_relative '../lib/arfi/cli'
+
+Arfi::CLI.start(ARGV)
