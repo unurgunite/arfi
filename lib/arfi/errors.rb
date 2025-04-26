@@ -19,6 +19,7 @@ module Arfi
       end
     end
 
+    # This error is raised when database adapter is not supported (for e.g., SQLite3).
     class AdapterNotSupported < StandardError
       def initialize(message = 'Adapter not supported')
         @message = message
