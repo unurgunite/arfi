@@ -1,19 +1,42 @@
 module Arfi
+  # +Arfi::SqlFunctionLoader+ is a class which loads user defined SQL functions into database.
   class SqlFunctionLoader
-    type db_config = {
-        user: String,
-        password: String,
-        host: String,
-        port: Integer,
-        dbname: String
-      }
-
+    # +Arfi::SqlFunctionLoader.load!+                        -> (nil | void)
+    #
+    # Loads user defined SQL functions into database.
+    #
+    # @return [nil] if there is no `db/functions` directory.
+    # @return [void] if there is no errors.
+    # @raise [Arfi::Errors::AdapterNotSupported] if database adapter is SQLite.
     def self.load!: () -> (nil | untyped)
 
     private
 
-    def self.sql_files: () -> (Array[String] | nil)
+    # +Arfi::SqlFunctionLoader#populate_db+                   -> void
+    #
+    # Loads user defined SQL functions into database.
+    #
+    # @!visibility private
+    # @private
+    # @return [void]
+    def self.populate_db: () -> untyped
 
-    def self.conn: (db_config db_config) -> untyped
+    # +Arfi::SqlFunctionLoader#sql_files+                     -> Array<String>
+    #
+    # Helper method to get list of SQL files.
+    #
+    # @!visibility private
+    # @private
+    # @return [Array<String>] List of SQL files.
+    def self.sql_files: () -> Array[String]
+
+    # +Arfi::SqlFunctionLoader#conn+                          -> ActiveRecord::ConnectionAdapters::AbstractAdapter
+    #
+    # Helper method to get database connection.
+    #
+    # @!visibility private
+    # @private
+    # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter] Database connection.
+    def self.conn: () -> ::ActiveRecord::ConnectionAdapters::AbstractAdapter
   end
 end

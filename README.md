@@ -94,12 +94,12 @@ ARFI is built on top of the following gems:
 
 ## Roadmap
 
-| Task           | Completed |
-|----------------|-----------|
-| db:migrate     | [x]       |
-| db:setup       | []        |
-| db:prepare     | []        |
-| db:schema:load | []        |
+| Task           | Completed          |
+|----------------|--------------------|
+| db:migrate     | :white_check_mark: |
+| db:setup       | :white_check_mark: |
+| db:prepare     | :white_check_mark: |
+| db:schema:load | :white_check_mark: |
 
 ## Contributing
 

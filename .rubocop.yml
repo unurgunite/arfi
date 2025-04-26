@@ -1,3 +1,6 @@
 AllCops:
   TargetRubyVersion: 3.1
   NewCops: enable
+  Exclude:
+    - lib/arfi/extensions/active_record/connection_adapters/postgresql/database_statements.rb
+    - 'vendor/**/*'
