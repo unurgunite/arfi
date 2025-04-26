@@ -97,7 +97,7 @@ ARFI is built on top of the following gems:
 | Task           | Completed          |
 |----------------|--------------------|
 | db:migrate     | :white_check_mark: |
-| db:setup       | :x:                |
+| db:setup       | :white_check_mark: |
 | db:prepare     | :x:                |
 | db:schema:load | :white_check_mark: |
 
