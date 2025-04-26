@@ -4,36 +4,58 @@ module Arfi
   # +Arfi::SqlFunctionLoader+ is a class which loads user defined SQL functions into database.
   class SqlFunctionLoader
     class << self
+      # +Arfi::SqlFunctionLoader.load!+                        -> (nil | void)
+      #
+      # Loads user defined SQL functions into database.
+      #
+      # @return [nil] if there is no `db/functions` directory.
+      # @return [void] if there is no errors.
+      # @raise [Arfi::Errors::AdapterNotSupported] if database adapter is SQLite.
       def load!
-        return unless sql_files&.any?
+        return unless sql_files.any?
+        raise Arfi::Errors::AdapterNotSupported if conn.adapter_name == 'SQLite'
 
-        puts '[ARFI] Loading SQL functions BEFORE schema load transaction...'
-        db_config = Rails.configuration.database_configuration[Rails.env]
-        conn = conn(db_config)
-
-        sql_files&.each do |file|
-          sql = File.read(file).strip
-          conn.exec(sql)
-          puts "[ARFI] Loaded: #{File.basename(file)}"
-        end
-
+        populate_db
         conn.close
       end
 
       private
 
+      # +Arfi::SqlFunctionLoader#populate_db+                   -> void
+      #
+      # Loads user defined SQL functions into database.
+      #
+      # @!visibility private
+      # @private
+      # @return [void]
+      def populate_db
+        sql_files.each do |file|
+          sql = File.read(file).strip
+          conn.execute(sql)
+          puts "[ARFI] Loaded: #{File.basename(file)}"
+        end
+      end
+
+      # +Arfi::SqlFunctionLoader#sql_files+                     -> Array<String>
+      #
+      # Helper method to get list of SQL files.
+      #
+      # @!visibility private
+      # @private
+      # @return [Array<String>] List of SQL files.
       def sql_files
         Dir.glob(Rails.root.join('db', 'functions').join('*.sql'))
       end
 
-      def conn(db_config)
-        PG.connect(
-          user: db_config['username'],
-          password: db_config['password'],
-          host: db_config['host'],
-          port: db_config['port'],
-          dbname: db_config['database']
-        )
+      # +Arfi::SqlFunctionLoader#conn+                          -> ActiveRecord::ConnectionAdapters::AbstractAdapter
+      #
+      # Helper method to get database connection.
+      #
+      # @!visibility private
+      # @private
+      # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter] Database connection.
+      def conn
+        ActiveRecord::Base.lease_connection
       end
     end
   end

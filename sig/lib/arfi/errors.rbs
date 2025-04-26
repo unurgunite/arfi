@@ -11,5 +11,11 @@ module Arfi
 
       def initialize: (?::String message) -> void
     end
+
+    class AdapterNotSupported < StandardError
+      @message: string
+
+      def initialize: (?::String message) -> void
+    end
   end
 end

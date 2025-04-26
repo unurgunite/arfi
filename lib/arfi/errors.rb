@@ -18,5 +18,12 @@ module Arfi
         super
       end
     end
+
+    class AdapterNotSupported < StandardError
+      def initialize(message = 'Adapter not supported')
+        @message = message
+        super
+      end
+    end
   end
 end
