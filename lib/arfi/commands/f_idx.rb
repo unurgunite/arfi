@@ -9,12 +9,36 @@ module Arfi
     # +Arfi::Commands::FIdx+ module contains commands for manipulating functional index in Rails project.
     class FIdx < Thor
       desc 'create INDEX_NAME', 'Initialize the functional index'
+      option :template, type: :string, banner: 'template_file'
       # +Arfi::Commands::FIdx#create+                        -> void
       #
       # This command is used to create the functional index.
       #
       # @example
       #   bundle exec arfi f_idx create some_function
+      #
+      # ARFI also supports the use of custom templates for SQL functions, but now there are some restrictions and rules
+      # according to which it is necessary to describe the function. First, the function must be written in a
+      # Ruby-compatible syntax: the file name is not so important, but the name for the function name must be
+      # interpolated with the +index_name+ variable name, and the function itself must be placed in the HEREDOC
+      # statement. Below is an example file.
+      #
+      # @example
+      #   # ./template/my_custom_template
+      #   <<~SQL
+      #   CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
+      #     LANGUAGE SQL
+      #     IMMUTABLE AS
+      #   $$
+      #     -- Function body here
+      #   $$
+      #   SQL
+      #
+      # To use a custom template, add the --template flag.
+      #
+      # @example
+      #   bundle exec arfi f_idx create some_function --template ./template/my_custom_template
+      #
       # @param index_name [String] Name of the index.
       # @return [void]
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
@@ -79,6 +103,8 @@ module Arfi
       # @param index_name [String] Name of the index.
       # @return [String] SQL function body.
       def build_sql_function(index_name)
+        return build_from_file(index_name) if options[:template]
+
         <<~SQL
           CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
               LANGUAGE SQL
@@ -87,6 +113,20 @@ module Arfi
               -- Function body here
           $$
         SQL
+      end
+
+      # +Arfi::Commands::FIdx#build_from_file+                          -> String
+      #
+      # Helper method to build the SQL function. Used with flag `--template`.
+      #
+      # @!visibility private
+      # @private
+      # @param index_name [String] Name of the index.
+      # @return [String] SQL function body.
+      # @see Arfi::Commands::FIdx#create
+      # @see Arfi::Commands::FIdx#build_sql_function
+      def build_from_file(index_name)
+        RubyVM::InstructionSequence.compile("index_name = '#{index_name}'; #{File.read(options[:template])}").eval
       end
 
       # +Arfi::Commands::FIdx#create_index_file+                        -> void
