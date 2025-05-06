@@ -4,3 +4,6 @@ AllCops:
   Exclude:
     - lib/arfi/extensions/active_record/connection_adapters/postgresql/database_statements.rb
     - 'vendor/**/*'
+
+Gemspec/DevelopmentDependencies:
+  EnforcedStyle: gemspec

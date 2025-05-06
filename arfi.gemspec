@@ -9,7 +9,9 @@ Gem::Specification.new do |spec|
   spec.email = ['senpaiguru1488@gmail.com']
 
   spec.summary = 'ActiveRecord Functional Indexes.'
-  spec.description = 'Bring the ability to create and maintain functional indexes without transition to structure.sql.'
+  spec.description = <<~STR
+    ARFI — ActiveRecord Functional Indexes. Bring the ability to create and maintain functional indexes without transition to structure.sql.
+  STR
   spec.homepage = 'https://github.com/unurgunite/arfi'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.1.0'
@@ -33,8 +35,13 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  # Uncomment to register a new dependency of your gem
-  # spec.add_dependency "example-gem", "~> 1.0"
+  spec.add_dependency 'rails'
+  spec.add_dependency 'rake'
+  spec.add_dependency 'thor'
+  spec.add_development_dependency 'irb'
+  spec.add_development_dependency 'repl_type_completor'
+  spec.add_development_dependency 'rspec', '~> 3.0'
+  spec.add_development_dependency 'rubocop', '~> 1.21'
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
