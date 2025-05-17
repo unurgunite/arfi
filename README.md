@@ -95,7 +95,7 @@ README is also available.
     | DB adapter     | Tested                                                |
     |----------------|-------------------------------------------------------|
     | PostgreSQL     | 9+ :white_check_mark:                                 |
-    | MySQL          | In progress :arrows_counterclockwise:                 |
+    | MySQL          | :white_check_mark:                                    |
     | SQLite3        | In progress (not primarily) :arrows_counterclockwise: |
 
 3. Rails support
@@ -109,7 +109,7 @@ README is also available.
 ## Roadmap
 
 1. ~~Custom template for SQL functions using `--template` flag;~~
-2. Multidb support (Rails 6+ feature);
+2. ~~Multidb support (Rails 6+ feature);~~
 3. Add support for 4+ ActiveRecord;
 4. Add RSpec tests;
 5. Add separate YARD doc page;
