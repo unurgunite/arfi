@@ -18,7 +18,9 @@
 ARFI – *ActiveRecord Functional Indexes*
 
 ARFI gem brings you the ability to create and maintain functional indexes for your ActiveRecord models without
-transition to `structure.sql` (SQL-based schema).
+transition to `structure.sql` (SQL-based schema). There is a working example in
+the [demo project](https://github.com/unurgunite/poc_arfi_72). All instructions are described in
+the [README](https://github.com/unurgunite/poc_arfi_72/blob/master/README.md).
 
 * [ARFI](#arfi)
     * [Installation](#installation)
