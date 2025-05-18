@@ -23,10 +23,9 @@ module Arfi
       # @example
       #   bundle exec arfi f_idx destroy some_function [revision index (just an integer, 1 is by default)]
       # @param index_name [String] Name of the index.
-      # @param revision [String] Revision of the index.
       # @return [void]
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
-      def destroy: (string index_name, ?::String revision) -> untyped
+      def destroy: (string index_name) -> untyped
 
       private
 

@@ -33,6 +33,9 @@ the [README](https://github.com/unurgunite/poc_arfi_72/blob/master/README.md).
     * [Demo](#demo)
     * [Library features](#library-features)
     * [Roadmap](#roadmap)
+    * [Commands](#commands)
+        * [Function creation](#function-creation)
+        * [Function destroy](#function-destroy)
     * [Development](#development)
         * [Build from source](#build-from-source)
     * [Requirements](#requirements)
@@ -84,21 +87,21 @@ README is also available.
 1. ARFI supports about all types of database initialization. It respects your database schema format and database
    configuration.
 
-    | Task             | Completed                                                    |
-    |------------------|--------------------------------------------------------------|
-    | db:migrate       | :white_check_mark:                                           |
-    | db:setup         | :white_check_mark:                                           |
-    | db:prepare       | :white_check_mark:                                           |
-    | db:schema:load   | :white_check_mark:                                           |
-    | db:setup:db_name | In progress (see [limitations][1]) :arrows_counterclockwise: |
+   | Task             | Completed                                                    |
+   |------------------|--------------------------------------------------------------|
+   | db:migrate       | :white_check_mark:                                           |
+   | db:setup         | :white_check_mark:                                           |
+   | db:prepare       | :white_check_mark:                                           |
+   | db:schema:load   | :white_check_mark:                                           |
+   | db:setup:db_name | In progress (see [limitations][1]) :arrows_counterclockwise: |
 
 2. Database support
 
-    | DB adapter     | Tested                                                |
-    |----------------|-------------------------------------------------------|
-    | PostgreSQL     | 9+ :white_check_mark:                                 |
-    | MySQL          | :white_check_mark:                                    |
-    | SQLite3        | In progress (not primarily) :arrows_counterclockwise: |
+   | DB adapter     | Tested                                                |
+   |----------------|-------------------------------------------------------|
+   | PostgreSQL     | 9+ :white_check_mark:                                 |
+   | MySQL          | :white_check_mark:                                    |
+   | SQLite3        | In progress (not primarily) :arrows_counterclockwise: |
 
 3. Rails support
 
@@ -116,7 +119,32 @@ README is also available.
 4. Add RSpec tests;
 5. Add separate YARD doc page;
 6. Update CI/CD;
-7. Add support for Ruby 2.6+. 
+7. Add support for Ruby 2.6+.
+
+## Commands
+
+ARFI has a set of commands to work with SQL functions. Type `bundle exec arfi help` for additional help. As noted above,
+ARFI uses Thor as a command line interface.
+
+### Function creation
+
+ARFI supports creation of SQL functions. To create a new function, run `bundle exec arfi f_idx create function_name`.
+Also, there are some options:
+
+| Option name  | Description                                                                          | Possible values            | Default value                                                 |
+|--------------|--------------------------------------------------------------------------------------|----------------------------|---------------------------------------------------------------|
+| `--template` | use custom template                                                                  | path within you filesystem | nil (will be used default template for each type of adapters) |
+| `--adapter`  | adapter specific function creation due to syntax differences between different RDBMS | postgresql, mysql          | nil (function will be stored in generic `db/functions`)       |
+
+### Function destroy
+
+ARFI supports destroy of SQL functions. To destroy a function, run
+`bundle exec arfi f_idx destroy function_name [revision (1 by default)]`.
+
+| Option name | Description                  | Possible values   | Default value                                              |
+|-------------|------------------------------|-------------------|------------------------------------------------------------|
+| --revision  | Function revision to destroy | Integer           | 1                                                          |
+| --adapter   | adapter specific function    | postgresql, mysql | nil (function will be destroyed in generic `db/functions`) |
 
 ## Development
 
@@ -151,7 +179,7 @@ ARFI is built on top of the following gems:
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/unurgunite/arfi. This project is intended to
 be a safe, welcoming space for collaboration, and contributors are expected to adhere to
-the [code of conduct](https://github.com/[USERNAME]/Arfi/blob/master/CODE_OF_CONDUCT.md).
+the [code of conduct](https://github.com/unurgunite/arfi/blob/master/CODE_OF_CONDUCT.md).
 
 ## Miscellaneous
 
@@ -164,6 +192,6 @@ The gem is available as open source under the terms of the [MIT License](https:/
 ## Code of Conduct
 
 Everyone interacting in the ARFI project's codebases, issue trackers, chat rooms and mailing lists is expected to follow
-the [code of conduct](https://github.com/[USERNAME]/Arfi/blob/master/CODE_OF_CONDUCT.md).
+the [code of conduct](https://github.com/unurgunite/arfi/blob/master/CODE_OF_CONDUCT.md).
 
 [1]: https://blog.saeloun.com/2021/10/27/rails-7-adds-database-specific-setup/#limitation

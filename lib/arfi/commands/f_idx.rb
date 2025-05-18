@@ -60,7 +60,15 @@ module Arfi
         create_function_file(index_name, content)
       end
 
-      desc 'destroy INDEX_NAME [REVISION]', 'Delete the functional index' # steep:ignore NoMethod
+      # steep:ignore:start
+      desc 'destroy INDEX_NAME [--revision=revision --adapter=adapter]', 'Delete the functional index.'
+      option :revision, type: :string, banner: 'revision', desc: 'Revision of the function.'
+      option :adapter, type: :string,
+                       desc: 'Specify database adapter, used for projects with multiple database architecture. ' \
+                             "Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      # steep:ignore:end
+
       # +Arfi::Commands::FIdx#destroy+                        -> void
       #
       # This command is used to delete the functional index.
@@ -68,13 +76,13 @@ module Arfi
       # @example
       #   bundle exec arfi f_idx destroy some_function [revision index (just an integer, 1 is by default)]
       # @param index_name [String] Name of the index.
-      # @param revision [String] Revision of the index.
       # @return [void]
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
-      def destroy(index_name, revision = '01')
+      def destroy(index_name)
         validate_schema_format!
 
-        revision = "0#{revision}" if revision.match?(/^\d$/)
+        revision = Integer(options[:revision] || '01') # steep:ignore NoMethod
+        revision = "0#{revision}"
         FileUtils.rm("#{functions_dir}/#{index_name}_v#{revision}.sql")
         puts "Deleted: #{functions_dir}/#{index_name}_v#{revision}.sql"
       end
