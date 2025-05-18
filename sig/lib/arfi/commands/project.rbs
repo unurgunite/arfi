@@ -1,6 +1,6 @@
 module Arfi
   module Commands
-    class Project < Thor
+    class Project
       # @return [void]
       def create: () -> void
 

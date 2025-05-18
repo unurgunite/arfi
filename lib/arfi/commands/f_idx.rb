@@ -8,8 +8,18 @@ module Arfi
   module Commands
     # +Arfi::Commands::FIdx+ module contains commands for manipulating functional index in Rails project.
     class FIdx < Thor
-      desc 'create INDEX_NAME', 'Initialize the functional index'
-      option :template, type: :string, banner: 'template_file'
+      ADAPTERS = %i[postgresql mysql].freeze
+
+      # steep:ignore:start
+      desc 'create FUNCTION_NAME [--template=template_file --adapter=adapter]', 'Initialize the functional index'
+      option :template, type: :string, banner: 'template_file',
+                        desc: 'Path to the template file. See `README.md` for details.'
+      option :adapter, type: :string,
+                       desc: 'Specify database adapter, used for projects with multiple database architecture. ' \
+                             "Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      # steep:ignore:end
+
       # +Arfi::Commands::FIdx#create+                        -> void
       #
       # This command is used to create the functional index.
@@ -47,10 +57,18 @@ module Arfi
       def create(index_name)
         validate_schema_format!
         content = build_sql_function(index_name)
-        create_index_file(index_name, content)
+        create_function_file(index_name, content)
       end
 
-      desc 'destroy INDEX_NAME [REVISION]', 'Delete the functional index'
+      # steep:ignore:start
+      desc 'destroy INDEX_NAME [--revision=revision --adapter=adapter]', 'Delete the functional index.'
+      option :revision, type: :string, banner: 'revision', desc: 'Revision of the function.'
+      option :adapter, type: :string,
+                       desc: 'Specify database adapter, used for projects with multiple database architecture. ' \
+                             "Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      # steep:ignore:end
+
       # +Arfi::Commands::FIdx#destroy+                        -> void
       #
       # This command is used to delete the functional index.
@@ -58,29 +76,18 @@ module Arfi
       # @example
       #   bundle exec arfi f_idx destroy some_function [revision index (just an integer, 1 is by default)]
       # @param index_name [String] Name of the index.
-      # @param revision [String] Revision of the index.
       # @return [void]
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
-      def destroy(index_name, revision = '01')
+      def destroy(index_name)
         validate_schema_format!
 
-        revision = "0#{revision}" if revision.match?(/^\d$/)
+        revision = Integer(options[:revision] || '01') # steep:ignore NoMethod
+        revision = "0#{revision}"
         FileUtils.rm("#{functions_dir}/#{index_name}_v#{revision}.sql")
         puts "Deleted: #{functions_dir}/#{index_name}_v#{revision}.sql"
       end
 
       private
-
-      # +Arfi::Commands::FIdx#functions_dir+                        -> Pathname
-      #
-      # Helper method to get path to `db/functions` directory.
-      #
-      # @!visibility private
-      # @private
-      # @return [Pathname] Path to `db/functions` directory
-      def functions_dir
-        Rails.root.join('db/functions')
-      end
 
       # +Arfi::Commands::FIdx#validate_schema_format!+                        -> void
       #
@@ -91,7 +98,7 @@ module Arfi
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby.
       # @return [nil] if the schema format is valid.
       def validate_schema_format!
-        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby
+        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby # steep:ignore NoMethod
       end
 
       # +Arfi::Commands::FIdx#build_sql_function+                        -> String
@@ -102,17 +109,43 @@ module Arfi
       # @private
       # @param index_name [String] Name of the index.
       # @return [String] SQL function body.
-      def build_sql_function(index_name)
-        return build_from_file(index_name) if options[:template]
+      def build_sql_function(index_name) # rubocop:disable Metrics/MethodLength
+        return build_from_file(index_name) if options[:template] # steep:ignore NoMethod
 
-        <<~SQL
-          CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
-              LANGUAGE SQL
-              IMMUTABLE AS
-          $$
-              -- Function body here
-          $$
-        SQL
+        unless options[:adapter] # steep:ignore NoMethod
+          return <<~SQL
+            CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
+                LANGUAGE SQL
+                IMMUTABLE AS
+            $$
+                -- Function body here
+            $$
+          SQL
+        end
+
+        case options[:adapter] # steep:ignore NoMethod
+        when 'postgresql'
+          <<~SQL
+            CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
+                LANGUAGE SQL
+                IMMUTABLE AS
+            $$
+                -- Function body here
+            $$
+          SQL
+        when 'mysql'
+          <<~SQL
+            CREATE FUNCTION #{index_name} ()
+            RETURNS return_type
+            BEGIN
+              -- function body
+            END;
+          SQL
+        else
+          # steep:ignore:start
+          raise "Unknown adapter: #{options[:adapter]}. Supported adapters: #{ADAPTERS.join(', ')}"
+          # steep:ignore:end
+        end
       end
 
       # +Arfi::Commands::FIdx#build_from_file+                          -> String
@@ -126,10 +159,12 @@ module Arfi
       # @see Arfi::Commands::FIdx#create
       # @see Arfi::Commands::FIdx#build_sql_function
       def build_from_file(index_name)
+        # steep:ignore:start
         RubyVM::InstructionSequence.compile("index_name = '#{index_name}'; #{File.read(options[:template])}").eval
+        # steep:ignore:end
       end
 
-      # +Arfi::Commands::FIdx#create_index_file+                        -> void
+      # +Arfi::Commands::FIdx#create_function_file+                        -> void
       #
       # Helper method to create the index file.
       #
@@ -138,13 +173,13 @@ module Arfi
       # @param index_name [String] Name of the index.
       # @param content [String] SQL function body.
       # @return [void]
-      def create_index_file(index_name, content)
+      def create_function_file(index_name, content)
         existing_files = Dir.glob("#{functions_dir}/#{index_name}*.sql")
 
         return write_file(index_name, content, 1) if existing_files.empty?
 
         latest_version = extract_latest_version(existing_files)
-        write_file(index_name, content, latest_version.next)
+        write_file(index_name, content, latest_version.succ)
       end
 
       # +Arfi::Commands::FIdx#extract_latest_version+                        -> Integer
@@ -171,13 +206,32 @@ module Arfi
       # @private
       # @param index_name [String] Name of the index.
       # @param content [String] SQL function body.
-      # @param version [Integer] Version of the index.
+      # @param version [String|Integer] Version of the index.
       # @return [void]
       def write_file(index_name, content, version)
         version_str = format('%02d', version)
         path = "#{functions_dir}/#{index_name}_v#{version_str}.sql"
-        File.write(path, content)
+        File.write(path, content.to_s)
         puts "Created: #{path}"
+      end
+
+      # +Arfi::Commands::FIdx#functions_dir+                        -> Pathname
+      #
+      # Helper method to get path to `db/functions` directory.
+      #
+      # @!visibility private
+      # @private
+      # @return [Pathname] Path to `db/functions` directory
+      def functions_dir
+        # steep:ignore:start
+        if options[:adapter]
+          raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.include?(options[:adapter].to_sym)
+
+          Rails.root.join("db/functions/#{options[:adapter]}")
+          # steep:ignore:end
+        else
+          Rails.root.join('db/functions')
+        end
       end
     end
   end

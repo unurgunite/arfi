@@ -1,6 +1,8 @@
 module Arfi
   module Commands
     class FIdx < Thor
+      ADAPTERS: Array[Symbol]
+
       # +Arfi::Commands::FIdx#create+                        -> void
       #
       # This command is used to create the functional index.
@@ -21,12 +23,23 @@ module Arfi
       # @example
       #   bundle exec arfi f_idx destroy some_function [revision index (just an integer, 1 is by default)]
       # @param index_name [String] Name of the index.
-      # @param revision [String] Revision of the index.
       # @return [void]
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby
-      def destroy: (string index_name, ?::String revision) -> untyped
+      def destroy: (string index_name) -> untyped
 
       private
+
+      # +Arfi::Commands::FIdx#build_from_file+                          -> String
+      #
+      # Helper method to build the SQL function. Used with flag `--template`.
+      #
+      # @!visibility private
+      # @private
+      # @param index_name [String] Name of the index.
+      # @return [String] SQL function body.
+      # @see Arfi::Commands::FIdx#create
+      # @see Arfi::Commands::FIdx#build_sql_function
+      def build_from_file: (string index_name) -> String
 
       # +Arfi::Commands::FIdx#functions_dir+                        -> Pathname
       #
@@ -57,7 +70,7 @@ module Arfi
       # @return [String] SQL function body.
       def build_sql_function: (string index_name) -> ::String
 
-      # +Arfi::Commands::FIdx#create_index_file+                        -> void
+      # +Arfi::Commands::FIdx#create_function_file+                        -> void
       #
       # Helper method to create the index file.
       #
@@ -66,7 +79,7 @@ module Arfi
       # @param index_name [String] Name of the index.
       # @param content [String] SQL function body.
       # @return [void]
-      def create_index_file: (string index_name, string content) -> untyped
+      def create_function_file: (string index_name, ::String content) -> untyped
 
       # +Arfi::Commands::FIdx#extract_latest_version+                        -> String
       #
@@ -76,7 +89,7 @@ module Arfi
       # @private
       # @param files [Array<String>] List of files.
       # @return [String] Latest version of the index.
-      def extract_latest_version: (Array[String] files) -> string
+      def extract_latest_version: (Array[String] files) -> String
 
       # +Arfi::Commands::FIdx#write_file+                        -> void
       #
@@ -86,9 +99,9 @@ module Arfi
       # @private
       # @param index_name [String] Name of the index.
       # @param content [String] SQL function body.
-      # @param version [Integer] Version of the index.
+      # @param version [String|Integer] Version of the index.
       # @return [void]
-      def write_file: (string index_name, string content, ::Integer version) -> untyped
+      def write_file: (string index_name, ::String content, (::String | ::Integer) version) -> void
     end
   end
 end
