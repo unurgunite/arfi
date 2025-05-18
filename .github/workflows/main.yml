@@ -34,8 +34,10 @@ jobs:
       - name: Clone external test project
         run: |
           git clone https://github.com/unurgunite/poc_arfi_72 external_specs
-          chmod +x external_specs/bin/test_case.sh
-          ./external_specs/bin/test_case.sh
+          cd external_specs
+          chmod +x ./bin/test_case.sh
+          bundle install
+          ./bin/test_case.sh
 
   release:
     name: Release Gem to RubyGems
