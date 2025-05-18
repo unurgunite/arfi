@@ -23,26 +23,28 @@ the [demo project](https://github.com/unurgunite/poc_arfi_72). All instructions 
 the [README](https://github.com/unurgunite/poc_arfi_72/blob/master/README.md).
 
 * [ARFI](#arfi)
-    * [Installation](#installation)
-    * [Usage](#usage)
-        * [CLI](#cli)
-        * [Project creation](#project-creation)
-        * [Index creation](#index-creation)
-        * [Index destroy](#index-destroy)
-        * [Additional help](#additional-help)
-    * [Demo](#demo)
-    * [Library features](#library-features)
-    * [Roadmap](#roadmap)
-    * [Commands](#commands)
-        * [Function creation](#function-creation)
-        * [Function destroy](#function-destroy)
-    * [Development](#development)
-        * [Build from source](#build-from-source)
-    * [Requirements](#requirements)
-    * [Contributing](#contributing)
-    * [Miscellaneous](#miscellaneous)
-    * [License](#license)
-    * [Code of Conduct](#code-of-conduct)
+   * [Installation](#installation)
+   * [Usage](#usage)
+      * [CLI](#cli)
+      * [Project creation](#project-creation)
+      * [Index creation](#index-creation)
+      * [Index destroy](#index-destroy)
+      * [Additional help](#additional-help)
+   * [Demo](#demo)
+   * [Library features](#library-features)
+   * [Roadmap](#roadmap)
+   * [Commands](#commands)
+      * [Function creation](#function-creation)
+      * [Function destroy](#function-destroy)
+         * [`--adapter` option](#--adapter-option)
+   * [Limitations](#limitations)
+   * [Development](#development)
+      * [Build from source](#build-from-source)
+   * [Requirements](#requirements)
+   * [Contributing](#contributing)
+   * [Miscellaneous](#miscellaneous)
+   * [License](#license)
+   * [Code of Conduct](#code-of-conduct)
 
 ## Installation
 
@@ -95,11 +97,11 @@ README is also available.
    | db:schema:load   | :white_check_mark:                                           |
    | db:setup:db_name | In progress (see [limitations][1]) :arrows_counterclockwise: |
 
-2. Database support
+2. Database support. ARFI supports PostgreSQL and MySQL databases and projects with multiple databases at the same time.
 
    | DB adapter     | Tested                                                |
    |----------------|-------------------------------------------------------|
-   | PostgreSQL     | 9+ :white_check_mark:                                 |
+   | PostgreSQL     | :white_check_mark:                                    |
    | MySQL          | :white_check_mark:                                    |
    | SQLite3        | In progress (not primarily) :arrows_counterclockwise: |
 
@@ -145,6 +147,18 @@ ARFI supports destroy of SQL functions. To destroy a function, run
 |-------------|------------------------------|-------------------|------------------------------------------------------------|
 | --revision  | Function revision to destroy | Integer           | 1                                                          |
 | --adapter   | adapter specific function    | postgresql, mysql | nil (function will be destroyed in generic `db/functions`) |
+
+#### `--adapter` option
+
+This option is used both when destroying and when creating an SQL function. In this case, the function will not be created
+in the default directory `db/functions`, but in the child `db/functions/#{adapter}`. Supported adapters: `postgresql`
+and `mysql`, but there will be more in the future.
+
+## Limitations
+
+Currently, ARFI has a limitation for `db:setup:db_name` task due to the fact how Rails manage this rake task. More info
+here: [limitations][1]. This command will work, but it is not recommended to use it. Note that this limitation applies
+only to multi-db setup, default `db:setup` will work as expected.
 
 ## Development
 
