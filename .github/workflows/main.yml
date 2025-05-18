@@ -11,6 +11,33 @@ jobs:
   test:
     name: Lint, Typecheck, and External Tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mysql:
+        image: mysql:9
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: test_db
+        options: >-
+          --health-cmd "mysqladmin ping --silent"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     strategy:
       matrix:
         ruby:
@@ -35,27 +62,19 @@ jobs:
         run: |
           git clone https://github.com/unurgunite/poc_arfi_72 external_specs
           cd external_specs
+          git checkout dynamic-database-use
+          # Set environment variables for DB connections
+          # PgSQL
+          export PG_DB_USERNAME=postgres
+          export PG_DB_PASSWORD=password
+          export PG_DB_HOST=localhost
+          export PG_DB_PORT=5432
+          # MySQL
+          export MYSQL_DB_USERNAME=root
+          export MYSQL_DB_PASSWORD=password
+          export MYSQL_DB_HOST=127.0.0.1
+          export MYSQL_DB_PORT=3306
+          
           chmod +x ./bin/test_case.sh
           bundle install
           ./bin/test_case.sh
-
-  release:
-    name: Release Gem to RubyGems
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.1.2'
-          bundler-cache: true
-      - name: Build the gem
-        run: gem build *.gemspec
-      - name: Push to RubyGems
-        env:
-          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
-        run: |
-          gem install rubygems-release
-          gem push *.gem

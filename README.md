@@ -5,9 +5,8 @@
 ---
 
 > [!WARNING]
-> This project only supports PostgreSQL databases, however, MySQL usage will also be available in upcoming updates.
-> Since SQLite3 does not support functional indexes with custom functions, support for this database will not be
-> available for a while, however, you can help the project by contributing to the open source.
+> This project only supports PostgreSQL and MySQL databases. SQLite3 will be supported in the future as well as other
+> databases supported by Rails.
 
 > [!NOTE]
 > This project requires Ruby 3.1.0+, it has not yet been tested on other versions, however, at the time of writing,
