@@ -1,6 +1,8 @@
 module Arfi
   module Commands
     class FIdx < Thor
+      ADAPTERS: Array[Symbol]
+
       # +Arfi::Commands::FIdx#create+                        -> void
       #
       # This command is used to create the functional index.
@@ -69,7 +71,7 @@ module Arfi
       # @return [String] SQL function body.
       def build_sql_function: (string index_name) -> ::String
 
-      # +Arfi::Commands::FIdx#create_index_file+                        -> void
+      # +Arfi::Commands::FIdx#create_function_file+                        -> void
       #
       # Helper method to create the index file.
       #
@@ -78,7 +80,7 @@ module Arfi
       # @param index_name [String] Name of the index.
       # @param content [String] SQL function body.
       # @return [void]
-      def create_index_file: (string index_name, ::String content) -> untyped
+      def create_function_file: (string index_name, ::String content) -> untyped
 
       # +Arfi::Commands::FIdx#extract_latest_version+                        -> String
       #
@@ -100,7 +102,7 @@ module Arfi
       # @param content [String] SQL function body.
       # @param version [String|Integer] Version of the index.
       # @return [void]
-      def write_file: (string index_name, ::String content, ::String | ::Integer version) -> void
+      def write_file: (string index_name, ::String content, (::String | ::Integer) version) -> void
     end
   end
 end

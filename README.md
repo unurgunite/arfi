@@ -130,7 +130,7 @@ git clone https://github.com/unurgunite/arfi.git
 cd arfi
 bundle install
 gem build arfi.gemspec
-gem install arfi-0.3.1.gem
+gem install arfi-0.4.0.gem
 ```
 
 Also, you can run `bin/setup` to automatically install everything needed.

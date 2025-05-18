@@ -8,8 +8,18 @@ module Arfi
   module Commands
     # +Arfi::Commands::FIdx+ module contains commands for manipulating functional index in Rails project.
     class FIdx < Thor
-      desc 'create INDEX_NAME', 'Initialize the functional index' # steep:ignore NoMethod
-      option :template, type: :string, banner: 'template_file' # steep:ignore NoMethod
+      ADAPTERS = %i[postgresql mysql].freeze
+
+      # steep:ignore:start
+      desc 'create FUNCTION_NAME [--template=template_file --adapter=adapter]', 'Initialize the functional index'
+      option :template, type: :string, banner: 'template_file',
+                        desc: 'Path to the template file. See `README.md` for details.'
+      option :adapter, type: :string,
+                       desc: 'Specify database adapter, used for projects with multiple database architecture. ' \
+                             "Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      # steep:ignore:end
+
       # +Arfi::Commands::FIdx#create+                        -> void
       #
       # This command is used to create the functional index.
@@ -47,7 +57,7 @@ module Arfi
       def create(index_name)
         validate_schema_format!
         content = build_sql_function(index_name)
-        create_index_file(index_name, content)
+        create_function_file(index_name, content)
       end
 
       desc 'destroy INDEX_NAME [REVISION]', 'Delete the functional index' # steep:ignore NoMethod
@@ -71,17 +81,6 @@ module Arfi
 
       private
 
-      # +Arfi::Commands::FIdx#functions_dir+                        -> Pathname
-      #
-      # Helper method to get path to `db/functions` directory.
-      #
-      # @!visibility private
-      # @private
-      # @return [Pathname] Path to `db/functions` directory
-      def functions_dir
-        Rails.root.join('db/functions')
-      end
-
       # +Arfi::Commands::FIdx#validate_schema_format!+                        -> void
       #
       # Helper method to validate the schema format.
@@ -102,17 +101,43 @@ module Arfi
       # @private
       # @param index_name [String] Name of the index.
       # @return [String] SQL function body.
-      def build_sql_function(index_name)
+      def build_sql_function(index_name) # rubocop:disable Metrics/MethodLength
         return build_from_file(index_name) if options[:template] # steep:ignore NoMethod
 
-        <<~SQL
-          CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
-              LANGUAGE SQL
-              IMMUTABLE AS
-          $$
-              -- Function body here
-          $$
-        SQL
+        unless options[:adapter] # steep:ignore NoMethod
+          return <<~SQL
+            CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
+                LANGUAGE SQL
+                IMMUTABLE AS
+            $$
+                -- Function body here
+            $$
+          SQL
+        end
+
+        case options[:adapter] # steep:ignore NoMethod
+        when 'postgresql'
+          <<~SQL
+            CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
+                LANGUAGE SQL
+                IMMUTABLE AS
+            $$
+                -- Function body here
+            $$
+          SQL
+        when 'mysql'
+          <<~SQL
+            CREATE FUNCTION #{index_name} ()
+            RETURNS return_type
+            BEGIN
+              -- function body
+            END;
+          SQL
+        else
+          # steep:ignore:start
+          raise "Unknown adapter: #{options[:adapter]}. Supported adapters: #{ADAPTERS.join(', ')}"
+          # steep:ignore:end
+        end
       end
 
       # +Arfi::Commands::FIdx#build_from_file+                          -> String
@@ -131,7 +156,7 @@ module Arfi
         # steep:ignore:end
       end
 
-      # +Arfi::Commands::FIdx#create_index_file+                        -> void
+      # +Arfi::Commands::FIdx#create_function_file+                        -> void
       #
       # Helper method to create the index file.
       #
@@ -140,7 +165,7 @@ module Arfi
       # @param index_name [String] Name of the index.
       # @param content [String] SQL function body.
       # @return [void]
-      def create_index_file(index_name, content)
+      def create_function_file(index_name, content)
         existing_files = Dir.glob("#{functions_dir}/#{index_name}*.sql")
 
         return write_file(index_name, content, 1) if existing_files.empty?
@@ -180,6 +205,25 @@ module Arfi
         path = "#{functions_dir}/#{index_name}_v#{version_str}.sql"
         File.write(path, content.to_s)
         puts "Created: #{path}"
+      end
+
+      # +Arfi::Commands::FIdx#functions_dir+                        -> Pathname
+      #
+      # Helper method to get path to `db/functions` directory.
+      #
+      # @!visibility private
+      # @private
+      # @return [Pathname] Path to `db/functions` directory
+      def functions_dir
+        # steep:ignore:start
+        if options[:adapter]
+          raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.include?(options[:adapter].to_sym)
+
+          Rails.root.join("db/functions/#{options[:adapter]}")
+          # steep:ignore:end
+        else
+          Rails.root.join('db/functions')
+        end
       end
     end
   end
