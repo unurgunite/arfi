@@ -99,17 +99,17 @@ README is also available.
 
 2. Database support. ARFI supports PostgreSQL and MySQL databases and projects with multiple databases at the same time.
 
-   | DB adapter     | Tested                                                |
-   |----------------|-------------------------------------------------------|
-   | PostgreSQL     | :white_check_mark:                                    |
-   | MySQL          | :white_check_mark:                                    |
-   | SQLite3        | In progress (not primarily) :arrows_counterclockwise: |
+   | DB adapter | Tested                                |
+   |------------|---------------------------------------|
+   | PostgreSQL | :white_check_mark:                    |
+   | MySQL      | :white_check_mark:                    |
+   | SQLite3    | In progress :arrows_counterclockwise: |
 
 3. Rails support
 
    | Rails version | Tested                                |
    |---------------|---------------------------------------|
-   | 8             | In progress :arrows_counterclockwise: |
+   | 8             | :white_check_mark:                    |
    | 7             | :white_check_mark:                    |
    | 6             | In progress :arrows_counterclockwise: |
 
@@ -143,10 +143,10 @@ Also, there are some options:
 ARFI supports destroy of SQL functions. To destroy a function, run
 `bundle exec arfi f_idx destroy function_name [revision (1 by default)]`.
 
-| Option name | Description                  | Possible values   | Default value                                              |
-|-------------|------------------------------|-------------------|------------------------------------------------------------|
-| --revision  | Function revision to destroy | Integer           | 1                                                          |
-| --adapter   | adapter specific function    | postgresql, mysql | nil (function will be destroyed in generic `db/functions`) |
+| Option name  | Description                  | Possible values   | Default value                                              |
+|--------------|------------------------------|-------------------|------------------------------------------------------------|
+| `--revision` | Function revision to destroy | Integer           | 1                                                          |
+| `--adapter`  | adapter specific function    | postgresql, mysql | nil (function will be destroyed in generic `db/functions`) |
 
 #### `--adapter` option
 
