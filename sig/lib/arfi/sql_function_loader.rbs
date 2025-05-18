@@ -1,14 +1,45 @@
 module Arfi
   # +Arfi::SqlFunctionLoader+ is a class which loads user defined SQL functions into database.
   class SqlFunctionLoader
+    attr_accessor self.task_name: nil | String
+
     # +Arfi::SqlFunctionLoader.load!+                        -> (nil | void)
     #
     # Loads user defined SQL functions into database.
     #
+    # @param task_name [String|nil] Name of the task.
     # @return [nil] if there is no `db/functions` directory.
     # @return [void] if there is no errors.
     # @raise [Arfi::Errors::AdapterNotSupported] if database adapter is SQLite.
-    def self.load!: () -> (nil | untyped)
+    def self.load!: (task_name: nil | String) -> (nil | untyped)
+    
+    # +Arfi::SqlFunctionLoader#sql_functions_by_adapter+      -> Array<String>
+    #
+    # Helper method to get list of SQL files for specific database adapter.
+    #
+    # @!visibility private
+    # @private
+    # @return [Array<String>] List of SQL files.
+    # @raise [Arfi::Errors::AdapterNotSupported] if database adapter is not supported.
+    def self.sql_functions_by_adapter: -> Array[String]
+
+    # +Arfi::SqlFunctionLoader#multidb?+                       -> Boolean
+    #
+    # Checks if the application has been configured to work with multiple databases.
+    #
+    # @return [Boolean]
+    def self.multidb?: -> bool
+
+    # +Arfi::SqlFunctionLoader#populate_multiple_db+          -> void
+    #
+    # Loads user defined SQL functions into all databases.
+    #
+    # @!visibility private
+    # @private
+    # @return [void]
+    # @see Arfi::SqlFunctionLoader#multidb?
+    # @see Arfi::SqlFunctionLoader#populate_db
+    def self.populate_multiple_db: -> void
 
     private
 

@@ -9,14 +9,15 @@ on:
 
 jobs:
   test:
-    name: Lint and Test
+    name: Lint, Typecheck, and External Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
         ruby:
-          - '3.1.2'
+          - '3.4.2'
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout current project
+        uses: actions/checkout@v4
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -26,14 +27,21 @@ jobs:
         run: bundle install
       - name: Run RuboCop
         run: bundle exec rubocop
-      - name: Run RSpec
-        run: bundle exec rspec
+      - name: Install RBS collection and run Steep
+        run: |
+          bundle exec rbs collection install
+          bundle exec steep check
+      - name: Clone external test project
+        run: |
+          git clone https://github.com/unurgunite/poc_arfi_72 external_specs
+          chmod +x external_specs/bin/test_case.sh
+          ./external_specs/bin/test_case.sh
 
   release:
     name: Release Gem to RubyGems
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' # Only run on manual trigger
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Ruby

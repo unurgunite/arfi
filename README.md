@@ -81,14 +81,16 @@ README is also available.
 
 ## Library features
 
-1. ARFI supports all types of database initialization
+1. ARFI supports about all types of database initialization. It respects your database schema format and database
+   configuration.
 
-    | Task           | Completed          |
-    |----------------|--------------------|
-    | db:migrate     | :white_check_mark: |
-    | db:setup       | :white_check_mark: |
-    | db:prepare     | :white_check_mark: |
-    | db:schema:load | :white_check_mark: |
+    | Task             | Completed                                                    |
+    |------------------|--------------------------------------------------------------|
+    | db:migrate       | :white_check_mark:                                           |
+    | db:setup         | :white_check_mark:                                           |
+    | db:prepare       | :white_check_mark:                                           |
+    | db:schema:load   | :white_check_mark:                                           |
+    | db:setup:db_name | In progress (see [limitations][1]) :arrows_counterclockwise: |
 
 2. Database support
 
@@ -163,3 +165,5 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 Everyone interacting in the ARFI project's codebases, issue trackers, chat rooms and mailing lists is expected to follow
 the [code of conduct](https://github.com/[USERNAME]/Arfi/blob/master/CODE_OF_CONDUCT.md).
+
+[1]: https://blog.saeloun.com/2021/10/27/rails-7-adds-database-specific-setup/#limitation

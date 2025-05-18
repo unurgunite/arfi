@@ -1,0 +1,5 @@
+module Arfi
+  # Top level CLI class
+  class CLI < Thor
+  end
+end

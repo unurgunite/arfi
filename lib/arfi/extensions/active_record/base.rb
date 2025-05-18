@@ -13,7 +13,7 @@ module ActiveRecord
     #   ActiveRecord::Base.function_exists?('my_function123') #=> false
     # @param [String] function_name The name of the function to check.
     # @return [Boolean] Returns true if the function exists, false otherwise.
-    def self.function_exists?(function_name)
+    def self.function_exists?(function_name) # rubocop:disable Metrics/MethodLength
       case connection
       when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
         connection.execute("SELECT * FROM pg_proc WHERE proname = '#{function_name}'").any?
@@ -29,7 +29,7 @@ module ActiveRecord
 
         !!connection.execute(sql).first
       else
-        raise AdapterNotSupported
+        raise ActiveRecord::AdapterNotFound, "adapter #{connection.class.name} is not supported"
       end
     end
   end

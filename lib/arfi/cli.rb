@@ -4,6 +4,7 @@ require 'thor'
 require_relative 'commands/project'
 require_relative 'commands/f_idx'
 
+# steep:ignore:start
 module Arfi
   # Top level CLI class
   class CLI < Thor
@@ -14,3 +15,4 @@ module Arfi
     subcommand 'f_idx', Commands::FIdx
   end
 end
+# steep:ignore:end

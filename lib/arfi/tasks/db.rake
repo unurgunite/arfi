@@ -12,14 +12,16 @@ end
 Rake::Task.define_task(:environment) unless Rake::Task.task_defined?(:environment)
 
 # Enhancing single db tasks
-%w[db:migrate db:schema:load db:setup db:prepare].each do |task|
+%w[db:migrate db:schema:load db:setup].each do |task|
   Rake::Task[task].enhance(['_db:arfi_enhance']) if Rake::Task.task_defined?(task)
 end
 
 # We remove user defined keys in database.yml and use only the ones about RDBMS connections.
 # Here we try to find tasks like db:migrate:your_db_name and enhance them as well as tasks for single db connections.
 rdbms_configs = Rails.configuration.database_configuration[Rails.env].select { |_k, v| v.is_a?(Hash) }.keys
-possible_tasks = Rake::Task.tasks.select { _1.name.match?(/^(db:migrate:|db:schema:load:|db:setup:|db:prepare:)(\w+)$/) }
+possible_tasks = Rake::Task.tasks.select do |task|
+  task.name.match?(/^(db:migrate:|db:schema:load:|db:setup:|db:prepare:|db:test:prepare:)(\w+)$/)
+end
 possible_tasks = possible_tasks.select do |task|
   rdbms_configs.any? { |n| task.name.include?(n) }
 end

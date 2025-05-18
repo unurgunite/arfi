@@ -8,8 +8,8 @@ module Arfi
   module Commands
     # +Arfi::Commands::FIdx+ module contains commands for manipulating functional index in Rails project.
     class FIdx < Thor
-      desc 'create INDEX_NAME', 'Initialize the functional index'
-      option :template, type: :string, banner: 'template_file'
+      desc 'create INDEX_NAME', 'Initialize the functional index' # steep:ignore NoMethod
+      option :template, type: :string, banner: 'template_file' # steep:ignore NoMethod
       # +Arfi::Commands::FIdx#create+                        -> void
       #
       # This command is used to create the functional index.
@@ -50,7 +50,7 @@ module Arfi
         create_index_file(index_name, content)
       end
 
-      desc 'destroy INDEX_NAME [REVISION]', 'Delete the functional index'
+      desc 'destroy INDEX_NAME [REVISION]', 'Delete the functional index' # steep:ignore NoMethod
       # +Arfi::Commands::FIdx#destroy+                        -> void
       #
       # This command is used to delete the functional index.
@@ -91,7 +91,7 @@ module Arfi
       # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby.
       # @return [nil] if the schema format is valid.
       def validate_schema_format!
-        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby
+        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby # steep:ignore NoMethod
       end
 
       # +Arfi::Commands::FIdx#build_sql_function+                        -> String
@@ -103,7 +103,7 @@ module Arfi
       # @param index_name [String] Name of the index.
       # @return [String] SQL function body.
       def build_sql_function(index_name)
-        return build_from_file(index_name) if options[:template]
+        return build_from_file(index_name) if options[:template] # steep:ignore NoMethod
 
         <<~SQL
           CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
@@ -126,7 +126,9 @@ module Arfi
       # @see Arfi::Commands::FIdx#create
       # @see Arfi::Commands::FIdx#build_sql_function
       def build_from_file(index_name)
+        # steep:ignore:start
         RubyVM::InstructionSequence.compile("index_name = '#{index_name}'; #{File.read(options[:template])}").eval
+        # steep:ignore:end
       end
 
       # +Arfi::Commands::FIdx#create_index_file+                        -> void
@@ -144,7 +146,7 @@ module Arfi
         return write_file(index_name, content, 1) if existing_files.empty?
 
         latest_version = extract_latest_version(existing_files)
-        write_file(index_name, content, latest_version.next)
+        write_file(index_name, content, latest_version.succ)
       end
 
       # +Arfi::Commands::FIdx#extract_latest_version+                        -> Integer
@@ -171,12 +173,12 @@ module Arfi
       # @private
       # @param index_name [String] Name of the index.
       # @param content [String] SQL function body.
-      # @param version [Integer] Version of the index.
+      # @param version [String|Integer] Version of the index.
       # @return [void]
       def write_file(index_name, content, version)
         version_str = format('%02d', version)
         path = "#{functions_dir}/#{index_name}_v#{version_str}.sql"
-        File.write(path, content)
+        File.write(path, content.to_s)
         puts "Created: #{path}"
       end
     end
