@@ -94,6 +94,7 @@ README is also available.
    | db:setup         | :white_check_mark:                                           |
    | db:prepare       | :white_check_mark:                                           |
    | db:schema:load   | :white_check_mark:                                           |
+   | db:reset         | :white_check_mark:                                           |
    | db:setup:db_name | In progress (see [limitations][1]) :arrows_counterclockwise: |
 
 2. Database support. ARFI supports PostgreSQL and MySQL databases and projects with multiple databases at the same time.

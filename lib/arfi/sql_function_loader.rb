@@ -11,7 +11,7 @@ module Arfi
       # @param task_name [String|nil] Name of the task.
       # @return [nil] if there is no `db/functions` directory.
       # @return [void] if there is no errors.
-      def load!(task_name:)
+      def load!(task_name: nil)
         self.task_name = task_name[/([^:]+$)/] if task_name
         return puts 'No SQL files found. Skipping db population with ARFI' unless sql_files.any?
 
