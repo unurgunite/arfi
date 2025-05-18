@@ -12,7 +12,7 @@ module Arfi
     # @return [void] if there is no errors.
     # @raise [Arfi::Errors::AdapterNotSupported] if database adapter is SQLite.
     def self.load!: (task_name: nil | String) -> (nil | untyped)
-    
+
     # +Arfi::SqlFunctionLoader#sql_functions_by_adapter+      -> Array<String>
     #
     # Helper method to get list of SQL files for specific database adapter.
@@ -23,12 +23,12 @@ module Arfi
     # @raise [Arfi::Errors::AdapterNotSupported] if database adapter is not supported.
     def self.sql_functions_by_adapter: -> Array[String]
 
-    # +Arfi::SqlFunctionLoader#multidb?+                       -> Boolean
+    # +Arfi::SqlFunctionLoader#multi_db?+                       -> Boolean
     #
     # Checks if the application has been configured to work with multiple databases.
     #
     # @return [Boolean]
-    def self.multidb?: -> bool
+    def self.multi_db?: -> bool
 
     # +Arfi::SqlFunctionLoader#populate_multiple_db+          -> void
     #
@@ -37,9 +37,30 @@ module Arfi
     # @!visibility private
     # @private
     # @return [void]
-    # @see Arfi::SqlFunctionLoader#multidb?
+    # @see Arfi::SqlFunctionLoader#multi_db?
     # @see Arfi::SqlFunctionLoader#populate_db
     def self.populate_multiple_db: -> void
+
+    # +Arfi::SqlFunctionLoader#raise_unless_supported_adapter+ -> void
+    #
+    # Checks if the database adapter is supported.
+    #
+    # @return [void]
+    # @raise [Arfi::Errors::AdapterNotSupported]
+    def self.raise_unless_supported_adapter: -> void
+
+    # +Arfi::SqlFunctionLoader#handle_db_population+         -> void
+    #
+    # Loads user defined SQL functions into database. This conditional branch was written this way because if we
+    # call db:migrate:db_name, then task_name will not be nil, but it will be zero if we call db:migrate. Then we
+    # check that the application has been configured to work with multiple databases in order to populate all
+    # databases, and only after this check can we populate the database in case the db:migrate (or any other) task
+    # has been called for configuration with a single database. Go to `lib/arfi/tasks/db.rake` for additional info.
+    #
+    # @!visibility private
+    # @private
+    # @return [void]
+    def self.handle_db_population: -> untyped
 
     private
 

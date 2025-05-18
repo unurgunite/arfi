@@ -11,25 +11,12 @@ module Arfi
       # @param task_name [String|nil] Name of the task.
       # @return [nil] if there is no `db/functions` directory.
       # @return [void] if there is no errors.
-      # @raise [Arfi::Errors::AdapterNotSupported] if database adapter is SQLite.
       def load!(task_name:)
         self.task_name = task_name[/([^:]+$)/] if task_name
         return puts 'No SQL files found. Skipping db population with ARFI' unless sql_files.any?
-        unless [ActiveRecord::ConnectionAdapters::PostgreSQLAdapter, ActiveRecord::ConnectionAdapters::Mysql2Adapter]
-               .include?(conn.class) # steep:ignore ArgumentTypeMismatch
-          raise Arfi::Errors::AdapterNotSupported
-        end
 
-        # This conditional branch was written this way because if we call db:migrate:db_name, then task_name will not
-        # be nil, but it will be zero if we call db:migrate. Then we check that the application has been configured to
-        # work with multiple databases in order to populate all databases, and only after this check can we populate
-        # the database in case the db:migrate (or any other) task has been called for configuration with
-        # a single database. Go to `lib/arfi/tasks/db.rake` for additional info.
-        if self.task_name || (self.task_name && multidb?)
-          populate_db
-        elsif multidb?
-          populate_multiple_db
-        end
+        raise_unless_supported_adapter
+        handle_db_population
         conn.close
       end
 
@@ -37,12 +24,49 @@ module Arfi
 
       attr_accessor :task_name
 
-      # +Arfi::SqlFunctionLoader#multidb?+                       -> Boolean
+      # +Arfi::SqlFunctionLoader#raise_unless_supported_adapter+ -> void
+      #
+      # Checks if the database adapter is supported.
+      #
+      # @!visibility private
+      # @private
+      # @return [void]
+      # @raise [Arfi::Errors::AdapterNotSupported]
+      def raise_unless_supported_adapter
+        allowed = [
+          ActiveRecord::ConnectionAdapters::PostgreSQLAdapter,
+          ActiveRecord::ConnectionAdapters::Mysql2Adapter
+        ].freeze
+        return if allowed.include?(conn.class) # steep:ignore ArgumentTypeMismatch
+
+        raise Arfi::Errors::AdapterNotSupported
+      end
+
+      # +Arfi::SqlFunctionLoader#handle_db_population+         -> void
+      #
+      # Loads user defined SQL functions into database. This conditional branch was written this way because if we
+      # call db:migrate:db_name, then task_name will not be nil, but it will be zero if we call db:migrate. Then we
+      # check that the application has been configured to work with multiple databases in order to populate all
+      # databases, and only after this check can we populate the database in case the db:migrate (or any other) task
+      # has been called for configuration with a single database. Go to `lib/arfi/tasks/db.rake` for additional info.
+      #
+      # @!visibility private
+      # @private
+      # @return [void]
+      def handle_db_population
+        if task_name || (task_name && multi_db?)
+          populate_db
+        elsif multi_db?
+          populate_multiple_db
+        end
+      end
+
+      # +Arfi::SqlFunctionLoader#multi_db?+                       -> Boolean
       #
       # Checks if the application has been configured to work with multiple databases.
       #
       # @return [Boolean]
-      def multidb?
+      def multi_db?
         ActiveRecord::Base.configurations.configurations.count { _1.env_name == Rails.env } > 1 # steep:ignore NoMethod
       end
 
@@ -53,7 +77,7 @@ module Arfi
       # @!visibility private
       # @private
       # @return [void]
-      # @see Arfi::SqlFunctionLoader#multidb?
+      # @see Arfi::SqlFunctionLoader#multi_db?
       # @see Arfi::SqlFunctionLoader#populate_db
       def populate_multiple_db
         # steep:ignore:start
@@ -87,10 +111,10 @@ module Arfi
       # @private
       # @return [Array<String>] List of SQL files.
       # @see Arfi::SqlFunctionLoader#load!
-      # @see Arfi::SqlFunctionLoader#multidb?
+      # @see Arfi::SqlFunctionLoader#multi_db?
       # @see Arfi::SqlFunctionLoader#sql_functions_by_adapter
       def sql_files
-        if task_name || multidb?
+        if task_name || multi_db?
           sql_functions_by_adapter
         else
           Dir.glob(Rails.root.join('db', 'functions').join('*.sql'))
