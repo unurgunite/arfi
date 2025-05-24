@@ -78,5 +78,16 @@ jobs:
           chmod +x ./bin/test_case.sh
           bundle install
           ./bin/test_case.sh
+  release:
+    name: Release Ruby Gem
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.2'
       - name: Release Gem
         uses: rubygems/release-gem@v1.1.1
