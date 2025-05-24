@@ -1,5 +1,8 @@
 # ARFI
 
+![Build status](https://img.shields.io/github/actions/workflow/status/unurgunite/arfi/main.yml "Build status")
+[![Gem Version](https://badge.fury.io/rb/arfi.svg)](https://badge.fury.io/rb/arfi)
+
 ![Alt](https://repobeats.axiom.co/api/embed/324b4f481b219890ef5a26e3c6fb73fff8929c93.svg "Repobeats analytics image")
 
 ---
@@ -15,10 +18,13 @@
 
 ARFI – *ActiveRecord Functional Indexes*
 
-ARFI gem brings you the ability to create and maintain functional indexes for your ActiveRecord models without
-transition to `structure.sql` (SQL-based schema). There is a working example in
-the [demo project](https://github.com/unurgunite/poc_arfi_72). All instructions are described in
-the [README](https://github.com/unurgunite/poc_arfi_72/blob/master/README.md).
+The ARFI gem provides the ability to create and maintain custom SQL functions for ActiveRecord models without switching
+to `structure.sql` (an SQL-based schema). You can use your own SQL functions in any part of the project, from migrations
+and models to everything else. There is a working example in
+the [demo project](https://github.com/unurgunite/poc_arfi_72). All instructions are described
+in [README](https://github.com/unurgunite/poc_arfi_72/blob/master/README.md). ARFI supports all types of database
+architectures implemented in Rails, suitable for both working with single databases and for simultaneous work with
+multiple databases in the same environment.
 
 * [ARFI](#arfi)
     * [Installation](#installation)
@@ -121,7 +127,7 @@ README is also available.
 3. Add support for 4+ ActiveRecord;
 4. Add RSpec tests;
 5. Add separate YARD doc page;
-6. Update CI/CD;
+6. ~~Update CI/CD;~~
 7. Add support for Ruby 2.6+.
 
 ## Commands
@@ -227,6 +233,9 @@ ARFI is built on top of the following gems:
 | Thor         | For CLI development.                                                                       |
 | Rubocop      | For static code analysis.                                                                  |
 | Rake         | For patching built-in Rails Rake tasks.                                                    |
+| Steep        | For static type checking.                                                                  |
+| RBS          | For static type checking.                                                                  |
+| YARD         | For generating documentation.                                                              |
 
 ## Contributing
 
