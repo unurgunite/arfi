@@ -34,7 +34,9 @@ the [README](https://github.com/unurgunite/poc_arfi_72/blob/master/README.md).
     * [Commands](#commands)
         * [Function creation](#function-creation)
         * [Function destroy](#function-destroy)
-            * [`--adapter` option](#--adapter-option)
+            * [Options](#options)
+                * [`--template` option](#--template-option)
+                * [`--adapter` option](#--adapter-option)
     * [Limitations](#limitations)
     * [Development](#development)
         * [Build from source](#build-from-source)
@@ -147,7 +149,45 @@ ARFI supports destroy of SQL functions. To destroy a function, run
 | `--revision` | Function revision to destroy | Integer           | 1                                                          |
 | `--adapter`  | adapter specific function    | postgresql, mysql | nil (function will be destroyed in generic `db/functions`) |
 
-#### `--adapter` option
+#### Options
+
+##### `--template` option
+
+This option is used for creating an SQL function. In this case, the function will not be created with the default
+template, but with user defined. There are some rules for templates:
+
+1. The template must be written in a Ruby-compatible syntax: the function must be placed in a HEREDOC statement and must
+   use interpolation for variables. If you need to take a more comprehensive approach to the issue of function
+   generation, you can try using your own methods in the template file. No matter what you write there, the main rule is
+   that your main method should return a string with a function template, as described below.
+2. ARFI supports dynamic variables in templates, but only one at the moment. You need to specify `index_name`
+   variable as below. In feature updated ARFI will support more variables. Here are default templates in ARFI for
+   PostgreSQL and MySQL:
+
+   PostgreSQL:
+    ```ruby
+    <<~SQL
+      CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
+      LANGUAGE SQL
+      IMMUTABLE AS
+      $$
+        -- Function body here
+      $$
+    SQL
+    ```
+   MySQL:
+    ```ruby
+    <<~SQL
+      CREATE FUNCTION #{index_name} ()
+      RETURNS return_type
+      BEGIN
+        -- Function body here
+      END;
+    SQL
+    ```
+3. By default ARFI uses PostgreSQL template.
+
+##### `--adapter` option
 
 This option is used both when destroying and when creating an SQL function. In this case, the function will not be
 created in the default directory `db/functions`, but in the child `db/functions/#{adapter}`. Supported adapters:

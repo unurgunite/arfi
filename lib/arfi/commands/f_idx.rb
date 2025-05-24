@@ -138,7 +138,7 @@ module Arfi
             CREATE FUNCTION #{index_name} ()
             RETURNS return_type
             BEGIN
-              -- function body
+              -- Function body here
             END;
           SQL
         else
