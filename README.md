@@ -9,8 +9,7 @@
 > databases supported by Rails.
 
 > [!NOTE]
-> This project requires Ruby 3.1.0+, it has not yet been tested on other versions, however, at the time of writing,
-> backward compatibility was maintained wherever possible.
+> This project requires Ruby 3.1.0+, in future updated 2.6+ Ruby versions will be supported.
 
 ---
 
@@ -172,7 +171,7 @@ git clone https://github.com/unurgunite/arfi.git
 cd arfi
 bundle install
 gem build arfi.gemspec
-gem install arfi-0.4.0.gem
+gem install arfi-0.5.0.gem
 ```
 
 Also, you can run `bin/setup` to automatically install everything needed.
