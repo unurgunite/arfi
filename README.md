@@ -29,6 +29,7 @@ multiple databases in the same environment.
 * [ARFI](#arfi)
     * [Installation](#installation)
     * [Usage](#usage)
+        * [Internal documentation](#internal-documentation)
         * [CLI](#cli)
         * [Project creation](#project-creation)
         * [Index creation](#index-creation)
@@ -61,6 +62,10 @@ bundle add arfi
 ```
 
 ## Usage
+
+### Internal documentation
+
+Internal documentation available at https://github.com/unurgunite/arfi_docs.
 
 ### CLI
 
@@ -126,7 +131,7 @@ README is also available.
 2. ~~Multidb support (Rails 6+ feature);~~
 3. Add support for 4+ ActiveRecord;
 4. Add RSpec tests;
-5. Add separate YARD doc page;
+5. ~~Add separate YARD doc page;~~
 6. ~~Update CI/CD;~~
 7. Add support for Ruby 2.6+.
 
