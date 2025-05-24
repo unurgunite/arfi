@@ -1,11 +1,25 @@
 module Arfi
   module Commands
     class Project
+      ADAPTERS: Array[Symbol]
+
+      # +Arfi::Commands::Project#create+                 -> void
+      #
+      # This command is used to create `db/functions` directory.
+      #
+      # @example
+      #   bundle exec arfi project create
       # @return [void]
+      # @raise [Arfi::Errors::InvalidSchemaFormat] if ActiveRecord.schema_format is not :ruby.
       def create: () -> void
 
       private
 
+      # +Arfi::Commands::Project#functions_dir+          -> Pathname
+      #
+      # Helper method to get path to `db/functions` directory.
+      #
+      # @!visibility private
       # @private
       # @return [Pathname] Path to `db/functions` directory
       def functions_dir: () -> Pathname

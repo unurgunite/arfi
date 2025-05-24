@@ -8,7 +8,16 @@ module Arfi
   module Commands
     # +Arfi::Commands::Project+ class is used to create `db/functions` directory.
     class Project < Thor
-      desc 'create', 'Initialize project by creating db/functions directory' # steep:ignore NoMethod
+      ADAPTERS = %i[postgresql mysql].freeze
+
+      # steep:ignore:start
+      desc 'create', 'Initialize project by creating db/functions directory'
+      option :adapter, type: :string,
+                       desc: 'Specify database adapter, used for projects with multiple database architecture. ' \
+                             "Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      # steep:ignore:end
+
       # +Arfi::Commands::Project#create+                 -> void
       #
       # This command is used to create `db/functions` directory.
@@ -27,7 +36,7 @@ module Arfi
 
       private
 
-      # +Arfi::Commands::Project#functions_dir+ -> Pathname
+      # +Arfi::Commands::Project#functions_dir+          -> Pathname
       #
       # Helper method to get path to `db/functions` directory.
       #
@@ -35,7 +44,15 @@ module Arfi
       # @private
       # @return [Pathname] Path to `db/functions` directory
       def functions_dir
-        Rails.root.join('db/functions')
+        # steep:ignore:start
+        if options[:adapter]
+          raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.include?(options[:adapter].to_sym)
+
+          Rails.root.join("db/functions/#{options[:adapter]}")
+          # steep:ignore:end
+        else
+          Rails.root.join('db/functions')
+        end
       end
     end
   end
