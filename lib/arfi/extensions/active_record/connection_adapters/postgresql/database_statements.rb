@@ -6,6 +6,7 @@ module ActiveRecord
   module ConnectionAdapters
     module PostgreSQL
       module DatabaseStatements
+        # This patch is used for db:prepare task.
         def raw_execute(sql, name, async: false, allow_retry: false, materialize_transactions: true)
           log(sql, name, async: async) do |notification_payload|
             with_raw_connection(allow_retry: allow_retry, materialize_transactions: materialize_transactions) do |conn|
