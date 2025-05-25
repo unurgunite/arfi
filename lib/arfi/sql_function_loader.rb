@@ -33,11 +33,9 @@ module Arfi
       # @return [void]
       # @raise [Arfi::Errors::AdapterNotSupported]
       def raise_unless_supported_adapter
-        allowed = [
-          ActiveRecord::ConnectionAdapters::PostgreSQLAdapter,
-          ActiveRecord::ConnectionAdapters::Mysql2Adapter
-        ].freeze
-        return if allowed.include?(conn.class) # steep:ignore ArgumentTypeMismatch
+        allowed = %w[ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
+                     ActiveRecord::ConnectionAdapters::Mysql2Adapter].freeze
+        return if allowed.include?(conn.class.to_s) # steep:ignore ArgumentTypeMismatch
 
         raise Arfi::Errors::AdapterNotSupported
       end
@@ -54,7 +52,7 @@ module Arfi
       # @private
       # @return [void]
       def handle_db_population
-        if task_name || (task_name && multi_db?)
+        if task_name || (task_name && multi_db?) || task_name.nil?
           populate_db
         elsif multi_db?
           populate_multiple_db

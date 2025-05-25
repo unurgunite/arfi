@@ -11,8 +11,13 @@ module Arfi
     desc 'project [COMMAND]', 'Project specific commands.'
     subcommand 'project', Commands::Project
 
-    desc 'f_idx [COMMAND]', 'Command to handle functional indexes.'
+    desc 'f_idx [COMMAND]', 'Command to handle functions.'
     subcommand 'f_idx', Commands::FIdx
+
+    desc 'version', 'Print the version'
+    def version
+      $stdout.write(Arfi::VERSION, "\n")
+    end
   end
 end
 # steep:ignore:end

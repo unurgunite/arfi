@@ -40,8 +40,7 @@ jobs:
 
     strategy:
       matrix:
-        ruby:
-          - '3.4.2'
+        ruby: [ '3.1', '3.2', '3.3', '3.4' ]
     steps:
       - name: Checkout current project
         uses: actions/checkout@v4
@@ -57,24 +56,61 @@ jobs:
       - name: Install RBS collection and run Steep
         run: |
           bundle exec rbs collection install
+          bundle exec rbs collection update
           bundle exec steep check
-      - name: Clone external test project
+
+      ######################################
+      # Multi-DB Test Case (dynamic-database-use)
+      ######################################
+      - name: Run external multi-db test project
         run: |
-          git clone https://github.com/unurgunite/poc_arfi_72 external_specs
-          cd external_specs
+          echo "Running multi-db tests from external project..."
+          git clone https://github.com/unurgunite/poc_arfi_72 external_multi
+          cd external_multi
           git checkout dynamic-database-use
-          # Set environment variables for DB connections
-          # PgSQL
+
           export PG_DB_USERNAME=postgres
           export PG_DB_PASSWORD=password
           export PG_DB_HOST=localhost
           export PG_DB_PORT=5432
-          # MySQL
+
           export MYSQL_DB_USERNAME=root
           export MYSQL_DB_PASSWORD=password
           export MYSQL_DB_HOST=127.0.0.1
           export MYSQL_DB_PORT=3306
-          
+
           chmod +x ./bin/test_case.sh
           bundle install
           ./bin/test_case.sh
+
+      ######################################
+      # Single-DB Test Case (PostgreSQL only)
+      ######################################
+      - name: Run external single-db test project
+        run: |
+          echo "Running single-db tests from external project (PostgreSQL only)..."
+          git clone https://github.com/unurgunite/poc_arfi_72 external_single
+          cd external_single
+          git checkout single-database-use
+
+          export PG_DB_USERNAME=postgres
+          export PG_DB_PASSWORD=password
+          export PG_DB_HOST=localhost
+          export PG_DB_PORT=5432
+
+          chmod +x ./bin/test_case.sh
+          bundle install
+          ./bin/test_case.sh
+  release:
+    name: Release Ruby Gem
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+      - name: Release Gem
+        uses: rubygems/release-gem@v1.1.1
