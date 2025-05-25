@@ -1,5 +1,6 @@
 module Arfi
   # Top level CLI class
   class CLI < Thor
+    def version: -> ::Integer
   end
 end
