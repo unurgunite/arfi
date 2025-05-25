@@ -91,7 +91,7 @@ jobs:
           echo "Running single-db tests from external project (PostgreSQL only)..."
           git clone https://github.com/unurgunite/poc_arfi_72 external_single
           cd external_single
-          git checkout master
+          git checkout single-database-use
 
           export PG_DB_USERNAME=postgres
           export PG_DB_PASSWORD=password
