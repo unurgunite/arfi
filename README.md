@@ -74,17 +74,20 @@ ARFI uses Thor as a command line interface (CLI) instead of Rake, so it has a sp
 ### Project creation
 
 Firstly, run `bundle exec arfi project create` to create a new project. This command will create `db/functions`
-directory. ARFI uses `db/functions` directory to store your functional indexes.
+directory. ARFI uses `db/functions` directory to store your SQL functions.
 
-### Index creation
+### Function creation
 
-Run `bundle exec arfi f_idx create function_name` to create a new functional index. New index will be created in
-`db/functions` directory under `function_name_v01.sql` name. Edit you index and run `bundle exec rails db:migrate`. You
-can also use custom template for index. Type `bundle exec arfi f_idx help create` for additional info.
+Run `bundle exec arfi f_idx create function_name` to create a new function. New SQL function will be created in
+`db/functions` directory under `function_name_v01.sql` name. Edit your function and run `bundle exec rails db:migrate`.
+You can also use custom template for functions using `--template` flag, this behaviour is described below.
+Type `bundle exec arfi f_idx help create` for additional info.
 
-### Index destroy
+### Function destroy
 
-If you want to destroy your index, run `bundle exec arfi f_idx destroy function_name [revision (1 by default)]`
+If you want to destroy your function, run `bundle exec arfi f_idx destroy function_name [revision (default 1)]`. Please
+note that after deleting the function, it will still be available, but if you run "bundle exec rails db:migrate" again,
+an error will occur when using the function. Enter `bundle exec arfi f_idx help destroy` for more information.
 
 ### Additional help
 
