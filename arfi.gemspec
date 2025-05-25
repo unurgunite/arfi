@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = 'ActiveRecord Functional Indexes.'
   spec.description = <<~STR
-    ARFI — ActiveRecord Functional Indexes. Bring the ability to create and maintain functional indexes without transition to structure.sql.
+    ARFI — ActiveRecord Functional Indexes. Provides the ability to create and maintain functions that can be used as indexes, as well as in other parts of the project without switching to structure.sql.
   STR
   spec.homepage = 'https://github.com/unurgunite/arfi'
   spec.license = 'MIT'
