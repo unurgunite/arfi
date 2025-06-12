@@ -146,7 +146,11 @@ module Arfi
       # @private
       # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter] Database connection.
       def conn
-        ActiveRecord::Base.lease_connection
+        if Rails::VERSION::MAJOR < 7 || (Rails::VERSION::MAJOR == 7 && Rails::VERSION::MINOR < 2)
+          ActiveRecord::Base.connection
+        else
+          ActiveRecord::Base.lease_connection
+        end
       end
     end
   end
