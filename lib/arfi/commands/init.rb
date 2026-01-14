@@ -23,7 +23,7 @@ module Arfi
                        banner: 'adapter'
       # steep:ignore:end
       def create
-        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby # steep:ignore NoMethod
+        validate_schema_format!
 
         root = Rails.root.join(ROOT_DIR)
         FileUtils.mkdir_p(root)
@@ -43,6 +43,19 @@ module Arfi
 
         FileUtils.mkdir_p(adapter_root.join(DEFAULT_SCHEMA))
         puts "Ensured: #{adapter_root.join(DEFAULT_SCHEMA)}"
+      end
+
+      private
+
+      def validate_schema_format!
+        fmt =
+          if defined?(Rails) && Rails.application
+            Rails.application.config.active_record.schema_format
+          elsif defined?(ActiveRecord::Base) && ActiveRecord::Base.respond_to?(:schema_format)
+            ActiveRecord::Base.schema_format
+          end
+
+        raise Arfi::Errors::InvalidSchemaFormat unless fmt == :ruby
       end
     end
   end

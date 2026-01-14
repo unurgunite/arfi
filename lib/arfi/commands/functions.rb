@@ -122,7 +122,14 @@ module Arfi
       private
 
       def validate_schema_format!
-        raise Arfi::Errors::InvalidSchemaFormat unless ActiveRecord.schema_format == :ruby # steep:ignore NoMethod
+        fmt =
+          if defined?(Rails) && Rails.application
+            Rails.application.config.active_record.schema_format
+          elsif defined?(ActiveRecord::Base) && ActiveRecord::Base.respond_to?(:schema_format)
+            ActiveRecord::Base.schema_format
+          end
+
+        raise Arfi::Errors::InvalidSchemaFormat unless fmt == :ruby
       end
 
       def validate_adapter_option!
