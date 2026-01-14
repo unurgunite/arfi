@@ -37,6 +37,7 @@ module Arfi
           # clear_active_connections MUST be false here, because we're inside a query retry path.
           Arfi::SqlFunctionLoader.load!(
             task_name: "arfi:runtime",
+            connection: self,
             clear_active_connections: false,
             verbose: false
           )

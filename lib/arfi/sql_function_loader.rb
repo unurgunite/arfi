@@ -19,27 +19,30 @@ module Arfi
   # - adapter-specific overrides generic when schema+filename matches
   class SqlFunctionLoader
     class << self
-      def load!(task_name: nil, clear_active_connections: true, verbose: true)
-        self.task_name = task_name[/([^:]+$)/] if task_name
-        self.verbose = verbose
+      # @param task_name [String|nil] name of rake task (used only for behavior selection / logging)
+      # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter|nil]
+      #   When provided, loader uses THIS connection (important for runtime retry paths).
+      # @param clear_active_connections [Boolean]
+      # @param verbose [Boolean]
+      def load!(task_name: nil, connection: nil, clear_active_connections: true, verbose: true)
+        task_short = task_name ? task_name[/([^:]+$)/] : nil
+        conn = connection || default_connection
 
-        raise_unless_supported_adapter
+        raise_unless_supported_adapter(conn)
 
-        if multi_db? && task_name.nil?
-          populate_multiple_db
+        if connection.nil? && multi_db? && task_name.nil?
+          populate_multiple_db(verbose: verbose)
         else
-          populate_db
+          populate_db(conn, verbose: verbose, task_name: task_short)
         end
       ensure
-        # Fine for task usage; not always safe for runtime retry paths.
+        # For runtime retry paths, callers should pass clear_active_connections: false
         ActiveRecord::Base.clear_active_connections! if clear_active_connections && defined?(ActiveRecord::Base)
       end
 
       private
 
-      attr_accessor :task_name, :verbose
-
-      def raise_unless_supported_adapter
+      def raise_unless_supported_adapter(conn)
         allowed = %w[
           ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
           ActiveRecord::ConnectionAdapters::Mysql2Adapter
@@ -54,19 +57,19 @@ module Arfi
         ActiveRecord::Base.configurations.configurations.count { _1.env_name == Rails.env } > 1 # steep:ignore NoMethod
       end
 
-      def populate_multiple_db
+      def populate_multiple_db(verbose:)
         # steep:ignore:start
         ActiveRecord::Base.configurations.configurations.select { _1.env_name == Rails.env }.each do |config|
           ActiveRecord::Base.establish_connection(config.config)
-          populate_db
+          populate_db(default_connection, verbose: verbose, task_name: nil)
         end
         # steep:ignore:end
       end
 
-      def populate_db
-        files = sql_files
+      def populate_db(conn, verbose:, task_name:)
+        files = sql_files(conn)
         if files.empty?
-          log("No SQL files found for adapter #{conn.class}. Skipping db population with ARFI")
+          log(conn, "No SQL files found for adapter #{conn.class}. Skipping db population with ARFI")
           return
         end
 
@@ -74,15 +77,34 @@ module Arfi
           sql = File.read(file).strip
           next if sql.empty?
 
-          conn.execute(sql)
-
-          if verbose
-            log("[ARFI] Loaded: #{File.basename(file)} into #{conn.pool.db_config.env_name} #{conn.pool.db_config.name}")
+          begin
+            conn.execute(sql)
+          rescue StandardError => e
+            # Make it obvious which file broke the load
+            raise e.class, "#{e.message}\n[ARFI] while loading #{file}", e.backtrace
           end
+
+          next unless verbose
+
+          env = safe_db_env(conn)
+          name = safe_db_name(conn)
+          log(conn, "[ARFI] Loaded: #{File.basename(file)} into #{env} #{name}#{" (#{task_name})" if task_name}")
         end
       end
 
-      def log(msg)
+      def safe_db_env(conn)
+        conn.pool&.db_config&.env_name.to_s
+      rescue StandardError
+        ''
+      end
+
+      def safe_db_name(conn)
+        conn.pool&.db_config&.name.to_s
+      rescue StandardError
+        ''
+      end
+
+      def log(_conn, msg)
         if defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
           Rails.logger.info(msg)
         else
@@ -90,19 +112,13 @@ module Arfi
         end
       end
 
-      # Returns final ordered list of SQL file paths to execute.
-      #
-      # Deduping key:
-      # - PostgreSQL: [schema, basename]
-      # - Others:    ["public", basename]
-      #
       # Priority (higher wins):
       #  10: adapter explicit schema dir (postgresql/<schema>/fn.sql)
       #   9: adapter explicit public dir (postgresql/public/fn.sql)
       #   8: adapter legacy public       (postgresql/fn.sql)
       #   2: generic explicit public     (public/fn.sql)
       #   1: generic legacy public       (fn.sql)
-      def sql_files
+      def sql_files(conn)
         root = Rails.root.join('db', 'functions')
         return [] unless root.directory?
 
@@ -132,7 +148,7 @@ module Arfi
             items.concat collect_sql(glob: dir.join('*.sql'), schema: child, priority: 10)
           end
         when ActiveRecord::ConnectionAdapters::Mysql2Adapter
-          # Keep old behavior; also allow mysql/public if present.
+          # mysql + mysql/public
           items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
           items.concat collect_sql(glob: adapter_root.join('public', '*.sql'), schema: 'public', priority: 9)
         else
@@ -161,7 +177,7 @@ module Arfi
         end
 
         chosen.values
-              .sort_by { |it| [it[:schema], it[:base]] } # deterministic
+              .sort_by { |it| [it[:schema], it[:base]] }
               .map { |it| it[:path] }
       end
 
@@ -172,7 +188,7 @@ module Arfi
         end
       end
 
-      def conn
+      def default_connection
         if Rails::VERSION::MAJOR < 7 || (Rails::VERSION::MAJOR == 7 && Rails::VERSION::MINOR < 2)
           ActiveRecord::Base.connection
         else
