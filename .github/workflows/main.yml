@@ -1,116 +1,101 @@
-name: Ruby Gem CI/CD
+name: CI
 
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
   pull_request:
   workflow_dispatch:
 
 jobs:
-  test:
-    name: Lint, Typecheck, and External Tests
+  lint_typecheck:
+    name: Lint + Typecheck
     runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: RuboCop
+        run: bundle exec rubocop
+
+      - name: Steep
+        run: |
+          bundle exec rbs collection install
+          bundle exec steep check
+
+  test:
+    name: Tests (matrix)
+    runs-on: ubuntu-latest
+
     services:
       postgres:
-        image: postgres:14
+        image: postgres:16
         ports:
           - 5432:5432
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: test_db
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: arfi_test
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      mysql:
-        image: mysql:9
-        ports:
-          - 3306:3306
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: test_db
-        options: >-
-          --health-cmd "mysqladmin ping --silent"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd "pg_isready -U postgres -d arfi_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
 
     strategy:
+      fail-fast: false
       matrix:
-        ruby: [ '3.1', '3.2', '3.3', '3.4' ]
+        include:
+          - ruby: "2.6"
+            gemfile: gemfiles/rails_6_0.gemfile
+          - ruby: "2.7"
+            gemfile: gemfiles/rails_6_1.gemfile
+          - ruby: "3.0"
+            gemfile: gemfiles/rails_7_0.gemfile
+          - ruby: "3.1"
+            gemfile: gemfiles/rails_7_1.gemfile
+          - ruby: "3.2"
+            gemfile: gemfiles/rails_7_2.gemfile
+          - ruby: "3.3"
+            gemfile: gemfiles/rails_8_0.gemfile
+          - ruby: "3.4"
+            gemfile: gemfiles/rails_8_1.gemfile
+
+    env:
+      ARFI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/arfi_test
+
     steps:
-      - name: Checkout current project
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
-      - name: Install dependencies
-        run: bundle install
-      - name: Run RuboCop
-        run: bundle exec rubocop
-      - name: Install RBS collection and run Steep
+
+      - name: Install bundle for Rails Gemfile
+        env:
+          BUNDLE_GEMFILE: ${{ matrix.gemfile }}
         run: |
-          bundle exec rbs collection install
-          bundle exec rbs collection update
-          bundle exec steep check
+          bundle config set path vendor/bundle
+          bundle check || bundle install
 
-      ######################################
-      # Multi-DB Test Case (dynamic-database-use)
-      ######################################
-      - name: Run external multi-db test project
+      - name: Wait for Postgres
         run: |
-          echo "Running multi-db tests from external project..."
-          git clone https://github.com/unurgunite/poc_arfi_72 external_multi
-          cd external_multi
-          git checkout dynamic-database-use
+          for i in {1..30}; do
+            pg_isready -h localhost -U postgres -d arfi_test && exit 0
+            sleep 1
+          done
+          echo "Postgres did not become ready" >&2
+          exit 1
 
-          export PG_DB_USERNAME=postgres
-          export PG_DB_PASSWORD=password
-          export PG_DB_HOST=localhost
-          export PG_DB_PORT=5432
-
-          export MYSQL_DB_USERNAME=root
-          export MYSQL_DB_PASSWORD=password
-          export MYSQL_DB_HOST=127.0.0.1
-          export MYSQL_DB_PORT=3306
-
-          chmod +x ./bin/test_case.sh
-          bundle install
-          ./bin/test_case.sh
-
-      ######################################
-      # Single-DB Test Case (PostgreSQL only)
-      ######################################
-      - name: Run external single-db test project
+      - name: Run specs
+        env:
+          BUNDLE_GEMFILE: ${{ matrix.gemfile }}
         run: |
-          echo "Running single-db tests from external project (PostgreSQL only)..."
-          git clone https://github.com/unurgunite/poc_arfi_72 external_single
-          cd external_single
-          git checkout single-database-use
-
-          export PG_DB_USERNAME=postgres
-          export PG_DB_PASSWORD=password
-          export PG_DB_HOST=localhost
-          export PG_DB_PORT=5432
-
-          chmod +x ./bin/test_case.sh
-          bundle install
-          ./bin/test_case.sh
-  release:
-    name: Release Ruby Gem
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby }}
-      - name: Release Gem
-        uses: rubygems/release-gem@v1.1.1
+          bundle exec rspec

@@ -17,3 +17,4 @@ Gemfile*.lock
 
 /.gem_rbs_collection
 .env
+gemfiles/*.lock
