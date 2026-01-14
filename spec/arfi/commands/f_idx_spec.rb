@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../../../lib/arfi/commands/f_idx'
+require_relative '../../../lib/arfi/commands/functions'
 
 RSpec.describe Arfi::Commands::FIdx do
   # before do

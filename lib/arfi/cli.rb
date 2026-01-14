@@ -1,18 +1,24 @@
 # frozen_string_literal: true
 
 require 'thor'
-require_relative 'commands/project'
-require_relative 'commands/f_idx'
+require_relative 'commands/init'
+require_relative 'commands/functions'
 
-# steep:ignore:start
 module Arfi
-  # Top level CLI class
   class CLI < Thor
-    desc 'project [COMMAND]', 'Project specific commands.'
-    subcommand 'project', Commands::Project
+    desc 'init [COMMAND]', 'Initialize ARFI directories (new command). Default: create'
+    subcommand 'init', Arfi::Commands::Init
 
-    desc 'f_idx [COMMAND]', 'Command to handle functions.'
-    subcommand 'f_idx', Commands::FIdx
+    # Old name alias -> new command
+    desc 'project [COMMAND]', 'Alias for `arfi init` (backward compatible).'
+    subcommand 'project', Arfi::Commands::Init
+
+    desc 'functions [COMMAND]', 'Manage SQL function files (new command). Default: list'
+    subcommand 'functions', Arfi::Commands::Functions
+
+    # Old name alias -> new command
+    desc 'f_idx [COMMAND]', 'Alias for `arfi functions` (backward compatible).'
+    subcommand 'f_idx', Arfi::Commands::Functions
 
     desc 'version', 'Print the version'
     def version
@@ -20,4 +26,3 @@ module Arfi
     end
   end
 end
-# steep:ignore:end

@@ -1,14 +1,24 @@
 # frozen_string_literal: true
 
 module Arfi
-  # +Arfi::SqlFunctionLoader+ loads user-defined SQL functions into the database.
+  # Loads user-defined SQL functions into the database.
+  #
+  # Supported directory layout (Option B: explicit public):
+  #
+  #   db/functions/public/*.sql                       (generic public)
+  #   db/functions/postgresql/public/*.sql            (postgres public)
+  #   db/functions/postgresql/<schema>/*.sql          (postgres schema)
+  #
+  # Backward-compatible legacy aliases:
+  #
+  #   db/functions/*.sql                              (generic public legacy)
+  #   db/functions/postgresql/*.sql                   (postgres public legacy)
+  #
+  # Rules:
+  # - underscore-prefixed files are ignored (_shared.sql)
+  # - adapter-specific overrides generic when schema+filename matches
   class SqlFunctionLoader
     class << self
-      # Loads user defined SQL functions into database.
-      #
-      # @param task_name [String|nil] Name of the task.
-      # @param clear_active_connections [Boolean] Whether to clear active connections in ensure.
-      # @param verbose [Boolean] Whether to log per-file loads.
       def load!(task_name: nil, clear_active_connections: true, verbose: true)
         self.task_name = task_name[/([^:]+$)/] if task_name
         self.verbose = verbose
@@ -26,6 +36,8 @@ module Arfi
       end
 
       private
+
+      attr_accessor :task_name, :verbose
 
       def raise_unless_supported_adapter
         allowed = %w[
@@ -45,7 +57,7 @@ module Arfi
       def populate_multiple_db
         # steep:ignore:start
         ActiveRecord::Base.configurations.configurations.select { _1.env_name == Rails.env }.each do |config|
-          ActiveRecord::Base.establish_connection(config)
+          ActiveRecord::Base.establish_connection(config.config)
           populate_db
         end
         # steep:ignore:end
@@ -64,9 +76,9 @@ module Arfi
 
           conn.execute(sql)
 
-          next unless verbose
-
-          log("[ARFI] Loaded: #{File.basename(file)} into #{conn.pool.db_config.env_name} #{conn.pool.db_config.name}")
+          if verbose
+            log("[ARFI] Loaded: #{File.basename(file)} into #{conn.pool.db_config.env_name} #{conn.pool.db_config.name}")
+          end
         end
       end
 
@@ -78,44 +90,85 @@ module Arfi
         end
       end
 
-      # ONE-FILE-PER-FUNCTION resolver:
-      # - generic: db/functions/*.sql
-      # - adapter:  db/functions/postgresql/*.sql OR db/functions/mysql/*.sql
-      # - adapter overrides generic by basename (same "function_name.sql")
+      # Returns final ordered list of SQL file paths to execute.
+      #
+      # Deduping key:
+      # - PostgreSQL: [schema, basename]
+      # - Others:    ["public", basename]
+      #
+      # Priority (higher wins):
+      #  10: adapter explicit schema dir (postgresql/<schema>/fn.sql)
+      #   9: adapter explicit public dir (postgresql/public/fn.sql)
+      #   8: adapter legacy public       (postgresql/fn.sql)
+      #   2: generic explicit public     (public/fn.sql)
+      #   1: generic legacy public       (fn.sql)
       def sql_files
         root = Rails.root.join('db', 'functions')
         return [] unless root.directory?
 
-        generic_glob = root.join('*.sql')
-        adapter_glob  = adapter_glob_for(conn, root)
+        items = []
 
-        files_by_name = {}
+        # Generic public (legacy + explicit)
+        items.concat collect_sql(glob: root.join('*.sql'), schema: 'public', priority: 1)
+        items.concat collect_sql(glob: root.join('public', '*.sql'), schema: 'public', priority: 2)
 
-        Dir.glob(generic_glob.to_s).each do |path|
-          base = File.basename(path)
-          next if base.start_with?('_')
+        adapter_root = adapter_root_for(conn, root)
+        return finalize_items(items) if adapter_root.nil? || !adapter_root.directory?
 
-          files_by_name[base] = path
-        end
-
-        Dir.glob(adapter_glob.to_s).each do |path|
-          base = File.basename(path)
-          next if base.start_with?('_')
-
-          files_by_name[base] = path
-        end
-
-        files_by_name.values.sort_by { |p| File.basename(p) }
-      end
-
-      def adapter_glob_for(conn, root)
         case conn
         when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
-          root.join('postgresql', '*.sql')
+          # Adapter public (legacy + explicit)
+          items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
+          items.concat collect_sql(glob: adapter_root.join('public', '*.sql'), schema: 'public', priority: 9)
+
+          # Adapter schema dirs (explicit): db/functions/postgresql/<schema>/*.sql
+          Dir.children(adapter_root).sort.each do |child|
+            next if child.start_with?('_')
+            next if child == 'public'
+
+            dir = adapter_root.join(child)
+            next unless dir.directory?
+
+            items.concat collect_sql(glob: dir.join('*.sql'), schema: child, priority: 10)
+          end
         when ActiveRecord::ConnectionAdapters::Mysql2Adapter
-          root.join('mysql', '*.sql')
+          # Keep old behavior; also allow mysql/public if present.
+          items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
+          items.concat collect_sql(glob: adapter_root.join('public', '*.sql'), schema: 'public', priority: 9)
         else
           raise Arfi::Errors::AdapterNotSupported
+        end
+
+        finalize_items(items)
+      end
+
+      def collect_sql(glob:, schema:, priority:)
+        Dir.glob(glob.to_s).map do |path|
+          base = File.basename(path)
+          next if base.start_with?('_')
+
+          { schema: schema, base: base, path: path, priority: priority }
+        end.compact
+      end
+
+      def finalize_items(items)
+        chosen = {}
+
+        items.each do |it|
+          key = "#{it[:schema]}/#{it[:base]}"
+          prev = chosen[key]
+          chosen[key] = it if prev.nil? || it[:priority] > prev[:priority]
+        end
+
+        chosen.values
+              .sort_by { |it| [it[:schema], it[:base]] } # deterministic
+              .map { |it| it[:path] }
+      end
+
+      def adapter_root_for(conn, root)
+        case conn
+        when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter then root.join('postgresql')
+        when ActiveRecord::ConnectionAdapters::Mysql2Adapter     then root.join('mysql')
         end
       end
 
