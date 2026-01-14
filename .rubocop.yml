@@ -9,6 +9,7 @@ AllCops:
 plugins:
   - rubocop-sorted_methods_by_call
   - rubocop-rspec
+  - rubocop-performance
 
 Gemspec/DevelopmentDependencies:
   EnforcedStyle: gemspec

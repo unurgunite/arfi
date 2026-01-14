@@ -25,7 +25,9 @@ RSpec.describe 'ARFI Postgres DatabaseStatementsPatch', :db do
     with_tmp_root do |_root|
       expect do
         ActiveRecord::Base.connection.select_value('SELECT definitely_not_there()')
-      end.to raise_error(PG::UndefinedFunction)
+      end.to raise_error(ActiveRecord::StatementInvalid) { |err|
+        expect(err.cause).to be_a(PG::UndefinedFunction)
+      }
     end
   end
 end

@@ -20,8 +20,8 @@ module Arfi
   class SqlFunctionLoader
     class << self
       # @param task_name [String|nil] name of rake task (used only for behavior selection / logging)
-      # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter|nil]
-      #   When provided, loader uses THIS connection (important for runtime retry paths).
+      # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter|nil] When provided, loader uses THIS
+      #  connection (important for runtime retry paths).
       # @param clear_active_connections [Boolean]
       # @param verbose [Boolean]
       def load!(task_name: nil, connection: nil, clear_active_connections: true, verbose: true)
@@ -37,7 +37,15 @@ module Arfi
         end
       ensure
         # For runtime retry paths, callers should pass clear_active_connections: false
-        ActiveRecord::Base.clear_active_connections! if clear_active_connections && defined?(ActiveRecord::Base)
+        if clear_active_connections && defined?(ActiveRecord::Base)
+          if ActiveRecord::Base.respond_to?(:connection_handler) &&
+             ActiveRecord::Base.connection_handler.respond_to?(:clear_active_connections!)
+            ActiveRecord::Base.connection_handler.clear_active_connections!
+          elsif ActiveRecord::Base.respond_to?(:clear_active_connections!)
+            # Older Rails fallback
+            ActiveRecord::Base.clear_active_connections!
+          end
+        end
       end
 
       private
@@ -159,12 +167,12 @@ module Arfi
       end
 
       def collect_sql(glob:, schema:, priority:)
-        Dir.glob(glob.to_s).map do |path|
+        Dir.glob(glob.to_s).filter_map do |path|
           base = File.basename(path)
           next if base.start_with?('_')
 
           { schema: schema, base: base, path: path, priority: priority }
-        end.compact
+        end
       end
 
       def finalize_items(items)

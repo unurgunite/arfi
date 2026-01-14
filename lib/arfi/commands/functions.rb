@@ -423,7 +423,7 @@ module Arfi
       end
 
       def collect_candidates(glob:, schema:, source:, origin:, priority:)
-        Dir.glob(glob.to_s).map do |path|
+        Dir.glob(glob.to_s).filter_map do |path|
           base = File.basename(path)
           next if base.start_with?('_')
 
@@ -437,7 +437,7 @@ module Arfi
             priority: priority,
             path: path
           }
-        end.compact
+        end
       end
 
       def print_table(rows)
