@@ -13,7 +13,7 @@ module ActiveRecord
     #   ActiveRecord::Base.function_exists?('my_function123') #=> false
     # @param [String] function_name The name of the function to check.
     # @return [Boolean] Returns true if the function exists, false otherwise.
-    def self.function_exists?(function_name) # rubocop:disable Metrics/MethodLength
+    def self.function_exists?(function_name)
       case connection
       when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
         sql = "SELECT 1 FROM pg_proc WHERE proname = #{connection.quote(function_name)} LIMIT 1"
