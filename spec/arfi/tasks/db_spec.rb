@@ -15,12 +15,9 @@ RSpec.describe 'ARFI rake task enhancements' do
     end
 
     # stub Rails.database_configuration used by db.rake dynamic part
-    allow(Rails).to receive_messages(env: ActiveSupport::StringInquirer.new('test'),
-                                     configuration: double(
-                                       database_configuration: {
-                                         'test' => { 'primary' => { 'adapter' => 'postgresql' } }
-                                       }
-                                     ))
+    allow(ActiveRecord::Base).to receive(:configurations).and_return({
+                                                                       'test' => { 'primary' => { 'adapter' => 'postgresql' } }
+                                                                     })
 
     load File.expand_path('../lib/arfi/tasks/db.rake', __dir__)
 

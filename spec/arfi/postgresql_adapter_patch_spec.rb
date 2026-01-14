@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-RSpec.describe 'ARFI Postgres DatabaseStatementsPatch' do
+RSpec.describe 'ARFI Postgres DatabaseStatementsPatch', :db do
   include ArfiSpec::TmpRoot
 
   it 'reloads functions and retries when a managed function is missing' do
     with_tmp_root do |root|
-      root.join('db/functions/postgresql/arfi_auto.sql').write(<<~SQL)
+      root.join('db/functions/postgresql/public/arfi_auto.sql').write(<<~SQL)
         CREATE OR REPLACE FUNCTION arfi_auto() RETURNS int
         LANGUAGE sql IMMUTABLE AS $$
           SELECT 42;

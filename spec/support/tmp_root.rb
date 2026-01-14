@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'pathname'
+require 'tmpdir'
 
 module ArfiSpec
   module TmpRoot
@@ -9,8 +11,10 @@ module ArfiSpec
     def with_tmp_root
       Dir.mktmpdir('arfi-spec-') do |dir|
         root = Pathname.new(dir)
-        FileUtils.mkdir_p(root.join('db/functions'))
-        FileUtils.mkdir_p(root.join('db/functions/postgresql'))
+
+        FileUtils.mkdir_p(root.join('db/functions/public'))
+        FileUtils.mkdir_p(root.join('db/functions/postgresql/public'))
+        FileUtils.mkdir_p(root.join('db/functions/mysql/public'))
 
         allow(Rails).to receive_messages(root: root, env: ActiveSupport::StringInquirer.new('test'))
 

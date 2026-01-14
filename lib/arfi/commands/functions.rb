@@ -4,7 +4,6 @@ require 'thor'
 require 'rails'
 require 'fileutils'
 require 'json'
-require File.expand_path('config/environment', Dir.pwd)
 
 module Arfi
   module Commands

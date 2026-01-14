@@ -1,16 +1,9 @@
 # frozen_string_literal: true
 
-require_relative '../../../lib/arfi/commands/functions'
+require 'rails_helper'
 
 RSpec.describe Arfi::Commands::FIdx do
-  # before do
-  #   allow(File).to receive(:expand_path).and_return(File::NULL)
-  #   allow(Kernel).to receive(:require).with(File::NULL)
-  # end
-
-  context 'when condition' do
-    it 'succeeds' do
-      pending 'Not implemented'
-    end
+  it 'is an alias of Arfi::Commands::Functions' do
+    expect(described_class).to eq(Arfi::Commands::Functions)
   end
 end

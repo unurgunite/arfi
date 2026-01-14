@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe 'functional index flow' do
+RSpec.describe 'functional index flow', :db do
   include ArfiSpec::TmpRoot
 
   it 'fails without function, succeeds after loader' do
@@ -18,7 +18,7 @@ RSpec.describe 'functional index flow' do
       end.to raise_error(PG::UndefinedFunction)
 
       # provide function definition
-      root.join('db/functions/postgresql/normalize_email.sql').write(<<~SQL)
+      root.join('db/functions/postgresql/public/normalize_email.sql').write(<<~SQL)
         CREATE OR REPLACE FUNCTION normalize_email(val text) RETURNS text
         LANGUAGE sql IMMUTABLE AS $$
           SELECT lower(val);
