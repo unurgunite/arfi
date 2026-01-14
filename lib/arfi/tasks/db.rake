@@ -5,14 +5,21 @@ require 'arfi/sql_function_loader'
 
 namespace :_db do
   task :arfi_enhance do
-    Arfi::SqlFunctionLoader.load!
+    Arfi::SqlFunctionLoader.load!(verbose: true)
   end
 end
 
 Rake::Task.define_task(:environment) unless Rake::Task.task_defined?(:environment)
 
 # Enhancing single db tasks
-%w[db:migrate db:schema:load db:setup].each do |task|
+# Enhancing single db tasks
+%w[
+  db:migrate
+  db:schema:load
+  db:setup
+  db:prepare
+  db:test:prepare
+].each do |task|
   Rake::Task[task].enhance(['_db:arfi_enhance']) if Rake::Task.task_defined?(task)
 end
 
@@ -32,7 +39,7 @@ end
 # an argument to the method.
 possible_tasks.each do |task|
   Rake::Task.define_task("_db:arfi_enhance:#{task.name}") do
-    Arfi::SqlFunctionLoader.load!(task_name: task.name)
+    Arfi::SqlFunctionLoader.load!(task_name: task.name, verbose: true)
   end
   task.enhance(["_db:arfi_enhance:#{task.name}"])
 end

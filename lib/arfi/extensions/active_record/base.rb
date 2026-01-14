@@ -16,18 +16,22 @@ module ActiveRecord
     def self.function_exists?(function_name) # rubocop:disable Metrics/MethodLength
       case connection
       when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
-        connection.execute("SELECT * FROM pg_proc WHERE proname = '#{function_name}'").any?
+        sql = "SELECT 1 FROM pg_proc WHERE proname = #{connection.quote(function_name)} LIMIT 1"
+        connection.select_value(sql).present?
       when ActiveRecord::ConnectionAdapters::Mysql2Adapter
+        schema = connection.quote(connection.current_database)
+        name   = connection.quote(function_name)
+
         sql = <<~SQL
           SELECT 1
           FROM information_schema.ROUTINES
           WHERE ROUTINE_TYPE = 'FUNCTION'
-            AND ROUTINE_SCHEMA = '#{connection.current_database}'
-            AND ROUTINE_NAME = '#{function_name}'
+            AND ROUTINE_SCHEMA = #{schema}
+            AND ROUTINE_NAME = #{name}
           LIMIT 1;
         SQL
 
-        !!connection.execute(sql).first
+        connection.select_value(sql).present?
       else
         raise ActiveRecord::AdapterNotFound, "adapter #{connection.class.name} is not supported"
       end

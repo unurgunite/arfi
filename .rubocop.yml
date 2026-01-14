@@ -4,6 +4,9 @@ AllCops:
   Exclude:
     - lib/arfi/extensions/active_record/connection_adapters/postgresql/database_statements.rb
     - 'vendor/**/*'
+plugins:
+  - rubocop-sorted_methods_by_call
+  - rubocop-rspec
 
 Gemspec/DevelopmentDependencies:
   EnforcedStyle: gemspec

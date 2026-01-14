@@ -8,10 +8,6 @@ RSpec.describe Arfi::Commands::FIdx do
   #   allow(Kernel).to receive(:require).with(File::NULL)
   # end
 
-  after do
-    # Do nothing
-  end
-
   context 'when condition' do
     it 'succeeds' do
       pending 'Not implemented'

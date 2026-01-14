@@ -42,6 +42,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'repl_type_completor', '>= 0.1.11'
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'rubocop', '>= 1.21'
+  spec.add_development_dependency 'rubocop-rspec'
+  spec.add_development_dependency 'rubocop-sorted_methods_by_call', '~> 1.2'
   spec.add_development_dependency 'steep', '~> 1.3'
   spec.add_development_dependency 'yard', '~> 0.9.37'
 
