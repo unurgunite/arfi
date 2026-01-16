@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   STR
   spec.homepage = 'https://github.com/unurgunite/arfi'
   spec.license = 'MIT'
-  spec.required_ruby_version = '>= 3.1'
+  spec.required_ruby_version = '>= 2.6'
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
 

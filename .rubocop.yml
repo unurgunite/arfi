@@ -1,11 +1,12 @@
 inherit_from: .rubocop_todo.yml
 
 AllCops:
-  TargetRubyVersion: 3.1
+  TargetRubyVersion: 2.6
   NewCops: enable
   Exclude:
     - lib/arfi/extensions/active_record/connection_adapters/postgresql/database_statements.rb
     - 'vendor/**/*'
+
 plugins:
   - rubocop-sorted_methods_by_call
   - rubocop-rspec
