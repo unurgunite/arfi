@@ -11,9 +11,6 @@
 > This project only supports PostgreSQL and MySQL databases. SQLite3 will be supported in the future as well as other
 > databases supported by Rails.
 
-> [!NOTE]
-> This project requires Ruby 3.1.0+, in future updated 2.6+ Ruby versions will be supported.
-
 ---
 
 ARFI – *ActiveRecord Functional Indexes*
@@ -136,7 +133,7 @@ README is also available.
 4. Add RSpec tests;
 5. ~~Add separate YARD doc page;~~
 6. ~~Update CI/CD;~~
-7. Add support for Ruby 2.6+.
+7. Add support for Ruby 2.7+.
 
 ## Commands
 

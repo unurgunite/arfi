@@ -25,7 +25,7 @@ ArfiSpec::Application.initialize! unless Rails.application
 require 'arfi'
 
 # Load spec support files
-Dir[File.join(__dir__, 'support', '**', '*.rb')].each { |f| require f }
+Dir[File.join(__dir__, 'support', '**', '*.rb')].sort.each { |f| require f }
 
 # DB availability + tagging
 ArfiSpec::DB.connect!

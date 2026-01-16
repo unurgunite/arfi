@@ -12,7 +12,7 @@ module Arfi
       ROOT_DIR = 'db/functions'
       DEFAULT_SCHEMA = 'public'
 
-      IDENT = /\A[a-zA-Z_][a-zA-Z0-9_]*\z/
+      IDENT = /\A[a-zA-Z_][a-zA-Z0-9_]*\z/.freeze
 
       default_task :list
 
