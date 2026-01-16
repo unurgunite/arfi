@@ -18,7 +18,7 @@ module ActiveRecord
       when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
         sql = "SELECT 1 FROM pg_proc WHERE proname = #{connection.quote(function_name)} LIMIT 1"
         !connection.select_value(sql).nil?
-      when ActiveRecord::ConnectionAdapters::Mysql2Adapter
+      when ActiveRecord::ConnectionAdapters::Mysql2Adapter, ActiveRecord::ConnectionAdapters::TrilogyAdapter
         schema = connection.quote(connection.current_database)
         name   = connection.quote(function_name)
 

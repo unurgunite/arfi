@@ -54,11 +54,10 @@ module Arfi
         allowed = %w[
           ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
           ActiveRecord::ConnectionAdapters::Mysql2Adapter
+          ActiveRecord::ConnectionAdapters::TrilogyAdapter
         ].freeze
 
-        return if allowed.include?(conn.class.to_s) # steep:ignore ArgumentTypeMismatch
-
-        raise Arfi::Errors::AdapterNotSupported
+        raise Arfi::Errors::AdapterNotSupported unless allowed.include?(conn.class.name)
       end
 
       def multi_db?
@@ -139,8 +138,8 @@ module Arfi
         adapter_root = adapter_root_for(conn, root)
         return finalize_items(items) if adapter_root.nil? || !adapter_root.directory?
 
-        case conn
-        when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
+        case conn.class.name
+        when 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
           # Adapter public (legacy + explicit)
           items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
           items.concat collect_sql(glob: adapter_root.join('public', '*.sql'), schema: 'public', priority: 9)
@@ -155,7 +154,7 @@ module Arfi
 
             items.concat collect_sql(glob: dir.join('*.sql'), schema: child, priority: 10)
           end
-        when ActiveRecord::ConnectionAdapters::Mysql2Adapter
+        when 'ActiveRecord::ConnectionAdapters::Mysql2Adapter', 'ActiveRecord::ConnectionAdapters::TrilogyAdapter'
           # mysql + mysql/public
           items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
           items.concat collect_sql(glob: adapter_root.join('public', '*.sql'), schema: 'public', priority: 9)
@@ -178,21 +177,26 @@ module Arfi
       def finalize_items(items)
         chosen = {}
 
-        items.each do |it|
-          key = "#{it[:schema]}/#{it[:base]}"
+        items.each do |item|
+          key = "#{item[:schema]}/#{item[:base]}"
           prev = chosen[key]
-          chosen[key] = it if prev.nil? || it[:priority] > prev[:priority]
+          chosen[key] = item if prev.nil? || item[:priority] > prev[:priority]
         end
 
         chosen.values
-              .sort_by { |it| [it[:schema], it[:base]] }
-              .map { |it| it[:path] }
+              .sort_by { |item| [item[:schema], item[:base]] }
+              .map { |item| item[:path] }
       end
 
       def adapter_root_for(conn, root)
-        case conn
-        when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter then root.join('postgresql')
-        when ActiveRecord::ConnectionAdapters::Mysql2Adapter     then root.join('mysql')
+        case conn.class.name
+        when 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
+          root.join('postgresql')
+        when 'ActiveRecord::ConnectionAdapters::Mysql2Adapter',
+          'ActiveRecord::ConnectionAdapters::TrilogyAdapter'
+          root.join('mysql')
+        else
+          raise Arfi::Errors::AdapterNotSupported
         end
       end
 

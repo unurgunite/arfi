@@ -60,7 +60,13 @@ RSpec.describe 'ARFI rake task enhancements' do
     Rake::Task.define_task(:environment)
     Rake::Task.define_task('db:migrate:animals')
 
-    # Avoid any real DB logic; we only verify the loader call
+    # Prevent db.rake from touching real AR configs / real connections
+    allow(ActiveRecord::Base).to receive(:establish_connection)
+
+    configs = double('db_configs')
+    allow(configs).to receive(:configs_for).and_return([]) # accepts any args/kwargs
+    allow(ActiveRecord::Base).to receive_messages(connection: Object.new, configurations: configs)
+
     allow(Arfi::SqlFunctionLoader).to receive(:load!)
 
     load File.expand_path('../../../lib/arfi/tasks/db.rake', __dir__)
@@ -68,7 +74,10 @@ RSpec.describe 'ARFI rake task enhancements' do
     enhancer = '_db:arfi_enhance:db:migrate:animals'
     Rake::Task[enhancer].invoke
 
-    expect(Arfi::SqlFunctionLoader).to have_received(:load!).with(hash_including(task_name: 'db:migrate:animals'))
+    expect(Arfi::SqlFunctionLoader).to have_received(:load!).with(hash_including(
+                                                                    task_name: 'db:migrate:animals',
+                                                                    verbose: true
+                                                                  ))
   ensure
     Rake.application = nil
   end

@@ -82,6 +82,11 @@ jobs:
     env:
       ARFI_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/arfi_test
       ARFI_MYSQL_URL: mysql2://root:password@127.0.0.1:3306/arfi_test
+      TRILOGY_RAILS: >-
+        ${{ contains(matrix.gemfile, 'rails_7_1')
+            || contains(matrix.gemfile, 'rails_7_2')
+            || contains(matrix.gemfile, 'rails_8_0')
+            || contains(matrix.gemfile, 'rails_8_1') }}
 
     steps:
       - uses: actions/checkout@v4
@@ -122,7 +127,35 @@ jobs:
           echo "MySQL did not become ready" >&2
           exit 1
 
+      - name: Make MySQL root Trilogy-compatible
+        if: env.TRILOGY_RAILS == 'true'
+        run: |
+          mysql -h 127.0.0.1 -uroot -ppassword -e "
+            ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+            FLUSH PRIVILEGES;
+          "
+
+      - name: Verify Trilogy connection works
+        if: env.TRILOGY_RAILS == 'true'
+        env:
+          BUNDLE_GEMFILE: ${{ matrix.gemfile }}
+          ARFI_MYSQL_URL: trilogy://root:password@127.0.0.1:3306/arfi_test
+        run: |
+          bundle exec ruby -e 'require "active_record";
+          ActiveRecord::Base.establish_connection(ENV.fetch("ARFI_MYSQL_URL"));
+          ActiveRecord::Base.connection.select_value("SELECT 1")'
+
       - name: Run specs
         env:
           BUNDLE_GEMFILE: ${{ matrix.gemfile }}
         run: bundle exec rspec
+
+      - name: Run Trilogy adapter specs
+        if: env.TRILOGY_RAILS == 'true'
+        env:
+          BUNDLE_GEMFILE: ${{ matrix.gemfile }}
+          ARFI_MYSQL_URL: trilogy://root:password@127.0.0.1:3306/arfi_test
+        run: bundle exec rspec --tag mysql
+
+#      - name: Check docs
+#        run: bundle exec docscribe --check lib spec

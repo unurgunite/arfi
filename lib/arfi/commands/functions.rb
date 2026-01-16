@@ -8,7 +8,7 @@ require 'json'
 module Arfi
   module Commands
     class Functions < Thor
-      ADAPTERS = %i[postgresql mysql].freeze
+      ADAPTERS = %i[postgresql mysql trilogy].freeze
       ROOT_DIR = 'db/functions'
       DEFAULT_SCHEMA = 'public'
 
@@ -105,7 +105,7 @@ module Arfi
         validate_adapter_option!
 
         adapter = adapter_opt || infer_adapter_from_config
-        raise ArgumentError, 'Could not infer adapter. Pass --adapter=postgresql or --adapter=mysql.' unless adapter
+        raise ArgumentError, 'Could not infer adapter. Pass --adapter=[postgresql|mysql|trilogy].' unless adapter
 
         rows = resolve_functions_for(adapter: adapter)
 
@@ -172,11 +172,9 @@ module Arfi
 
       def validate_identifiers!(schema, fn)
         raise ArgumentError, "Invalid function name: #{fn.inspect}" unless IDENT.match?(fn)
-
         return if schema.nil?
 
         raise ArgumentError, "Invalid schema name: #{schema.inspect}" unless IDENT.match?(schema)
-
         return unless adapter_opt && adapter_opt != 'postgresql'
 
         raise ArgumentError, 'Schema-qualified functions are only supported for PostgreSQL (adapter=postgresql).'
@@ -226,7 +224,7 @@ module Arfi
         end
 
         case adapter
-        when 'mysql'
+        when 'mysql', 'trilogy'
           <<~SQL
             -- MySQL note: you may need to DROP FUNCTION IF EXISTS #{fn};
             -- and ensure your connection allows multi-statements if you include both.
@@ -294,7 +292,7 @@ module Arfi
         when 'postgresql'
           sch = schema || DEFAULT_SCHEMA
           root.join('postgresql', sch, "#{fn}.sql").to_s
-        when 'mysql'
+        when 'mysql', 'trilogy'
           raise ArgumentError, 'Schema-qualified functions are only supported for PostgreSQL.' if schema
 
           root.join('mysql', DEFAULT_SCHEMA, "#{fn}.sql").to_s
@@ -324,7 +322,7 @@ module Arfi
           out << root.join('postgresql', "#{fn}.sql").to_s if sch == DEFAULT_SCHEMA # legacy adapter public
           out << root.join(DEFAULT_SCHEMA, "#{fn}.sql").to_s
           out << root.join("#{fn}.sql").to_s
-        when 'mysql'
+        when 'mysql', 'trilogy'
           out << root.join('mysql', DEFAULT_SCHEMA, "#{fn}.sql").to_s
           out << root.join('mysql', "#{fn}.sql").to_s # legacy mysql public
           out << root.join(DEFAULT_SCHEMA, "#{fn}.sql").to_s
@@ -439,7 +437,7 @@ module Arfi
             key: "#{schema}/#{base}",
             schema: schema,
             function: fn,
-            source: source,     # "generic" | "postgresql" | "mysql"
+            source: source,     # "generic" | "postgresql" | "mysql" | "trilogy"
             origin: origin,     # "explicit" | "legacy"
             priority: priority,
             path: path
