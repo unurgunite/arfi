@@ -68,7 +68,7 @@ module Arfi
       def populate_multiple_db(verbose:)
         # steep:ignore:start
         ActiveRecord::Base.configurations.configurations.select { _1.env_name == Rails.env }.each do |config|
-          ActiveRecord::Base.establish_connection(config.config)
+          ActiveRecord::Base.establish_connection(config)
           populate_db(default_connection, verbose: verbose, task_name: nil)
         end
         # steep:ignore:end

@@ -28,7 +28,7 @@ RSpec.describe Arfi::SqlFunctionLoader, :pgsql do
         $$;
       SQL
 
-      root.join('db/functions/public/arfi_echo.sql').write(<<~SQL)
+      root.join('db/functions/postgresql/public/arfi_echo.sql').write(<<~SQL)
         CREATE OR REPLACE FUNCTION arfi_echo() RETURNS text
         LANGUAGE sql IMMUTABLE AS $$
           SELECT 'postgres';

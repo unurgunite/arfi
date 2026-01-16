@@ -3,44 +3,57 @@
 require 'active_record'
 
 module ArfiSpec
+  # Named class to avoid: "Anonymous class is not allowed."
+  class PgsqlProbeRecord < ActiveRecord::Base
+    self.abstract_class = true
+  end
+
   module PgSQLDB
     class << self
-      # Probe availability WITHOUT mutating ActiveRecord::Base global connection
+      # Probe availability WITHOUT mutating ActiveRecord::Base connection
       def connect!
         return @available = false if url.nil? || url.empty?
 
-        klass = Class.new(ActiveRecord::Base) { self.abstract_class = true }
-        klass.establish_connection(url)
-        klass.connection
-        klass.connection_pool.disconnect!
+        PgsqlProbeRecord.establish_connection(url)
+        PgsqlProbeRecord.connection
         @available = true
       rescue StandardError => e
-        warn "[ARFI SPEC] Postgres unavailable (#{e.class}: #{e.message}). Skipping db specs."
+        warn "[ARFI SPEC] Postgres unavailable (#{e.class}: #{e.message}). Skipping pgsql specs."
         @available = false
+      ensure
+        begin
+          PgsqlProbeRecord.connection_pool.disconnect!
+        rescue StandardError
+          nil
+        end
       end
 
       def available?
         !!@available
       end
 
-      # These methods assume ActiveRecord::Base is already connected to Postgres
-      def reset_public_schema!
-        ActiveRecord::Base.connection.execute('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;')
-      end
-
+      # Used in :pgsql hooks — this DOES mutate ActiveRecord::Base (intentionally)
       def ensure_connected!
+        raise 'ARFI_POSTGRES_URL is not set' if url.nil? || url.empty?
+
         ActiveRecord::Base.establish_connection(url)
         ActiveRecord::Base.connection
       end
 
       def url
-        ENV.fetch('ARFI_DATABASE_URL', nil)
+        ENV.fetch('ARFI_POSTGRES_URL', nil)
+      end
+
+      def reset_public_schema!
+        conn = ActiveRecord::Base.connection
+        conn.execute('DROP SCHEMA IF EXISTS public CASCADE')
+        conn.execute('CREATE SCHEMA public')
       end
 
       def disconnect!
-        ActiveRecord::Base.connection_pool.disconnect! if ActiveRecord::Base.respond_to?(:connection_pool)
+        ActiveRecord::Base.connection_pool.disconnect!
       rescue StandardError
-        # ignore
+        nil
       end
     end
   end

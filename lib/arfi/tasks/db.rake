@@ -28,8 +28,10 @@ end
 def arfi_db_config_for(name)
   # Rails 6/7+ preferred way
   if ActiveRecord::Base.respond_to?(:configurations) && ActiveRecord::Base.configurations
-    cfg = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env, name: name).first
-    return cfg&.configuration_hash
+    list = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env, name: name)
+    list = Array(list)
+    cfg = list.first
+    cfg&.configuration_hash
   end
 
   nil

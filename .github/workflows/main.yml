@@ -80,16 +80,16 @@ jobs:
             gemfile: gemfiles/rails_8_1.gemfile
 
     env:
-      ARFI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/arfi_test
+      ARFI_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/arfi_test
       ARFI_MYSQL_URL: mysql2://root:password@127.0.0.1:3306/arfi_test
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install native deps (mysql2)
+      - name: Install native deps (mysql2, pg)
         run: |
           sudo apt-get update
-          sudo apt-get install -y default-libmysqlclient-dev
+          sudo apt-get install -y default-libmysqlclient-dev postgresql-client
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1

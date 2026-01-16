@@ -11,4 +11,5 @@ for gemfile in "$GEMFILES_DIR"/*.gemfile; do
 
   BUNDLE_GEMFILE="$gemfile" bundle check || BUNDLE_GEMFILE="$gemfile" bundle install
   BUNDLE_GEMFILE="$gemfile" bundle exec rspec
+  BUNDLE_GEMFILE="$gemfile" bundle exec rspec --tag pgsql --tag mysql
 done

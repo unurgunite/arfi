@@ -5,6 +5,7 @@ ENV['RAILS_ENV'] ||= 'test'
 require_relative 'spec_helper'
 
 require 'logger'
+require 'dotenv/load'
 require 'rails'
 require 'active_record/railtie'
 
