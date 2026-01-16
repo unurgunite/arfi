@@ -2,7 +2,6 @@
 
 ENV['RAILS_ENV'] ||= 'test'
 
-require 'dotenv/load'
 require_relative 'spec_helper'
 
 require 'logger'
@@ -14,7 +13,6 @@ module ArfiSpec
     config.eager_load = false
     config.secret_key_base = 'test'
     config.logger = Logger.new($stdout)
-
     config.active_record.schema_format = :ruby
   end
 end
@@ -24,25 +22,31 @@ ArfiSpec::Application.initialize! unless Rails.application
 
 require 'arfi'
 
-# Load spec support files
 Dir[File.join(__dir__, 'support', '**', '*.rb')].sort.each { |f| require f }
 
-# DB availability + tagging
+# Probe DB availability (does NOT mutate ActiveRecord::Base connection anymore)
 ArfiSpec::PgSQLDB.connect!
 ArfiSpec::MySQLDB.connect! if defined?(ArfiSpec::MySQLDB)
 
 RSpec.configure do |config|
-  # If DB isn't available, skip :db specs but still run everything else
   config.filter_run_excluding pgsql: true unless ArfiSpec::PgSQLDB.available?
   config.filter_run_excluding mysql: true unless ArfiSpec::MySQLDB.available?
 
-  # Only reset schema for DB specs
   config.before(:each, :pgsql) do
+    ArfiSpec::PgSQLDB.ensure_connected!
     ArfiSpec::PgSQLDB.reset_public_schema!
   end
 
+  config.after(:each, :pgsql) do
+    ArfiSpec::PgSQLDB.disconnect!
+  end
+
   config.before(:each, :mysql) do
-    ArfiSpec::MySQLDB.connect!
+    ArfiSpec::MySQLDB.ensure_connected!
     ArfiSpec::MySQLDB.reset!
+  end
+
+  config.after(:each, :mysql) do
+    ArfiSpec::MySQLDB.disconnect!
   end
 end
