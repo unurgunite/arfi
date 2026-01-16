@@ -3,7 +3,7 @@
 require 'active_record'
 
 module ArfiSpec
-  module DB
+  module PgSQLDB
     class << self
       def connect!
         url = ENV.fetch('ARFI_DATABASE_URL', nil)
@@ -16,7 +16,7 @@ module ArfiSpec
         ActiveRecord::Base.connection # force connection now
         @available = true
       rescue StandardError => e
-        warn "[ARFI SPEC] DB unavailable (#{e.class}: #{e.message}). Skipping :db specs."
+        warn "[ARFI SPEC] DB unavailable (#{e.class}: #{e.message}). Skipping :pgsql specs."
         @available = false
       end
 

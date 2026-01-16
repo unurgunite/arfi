@@ -28,14 +28,21 @@ require 'arfi'
 Dir[File.join(__dir__, 'support', '**', '*.rb')].sort.each { |f| require f }
 
 # DB availability + tagging
-ArfiSpec::DB.connect!
+ArfiSpec::PgSQLDB.connect!
+ArfiSpec::MySQLDB.connect! if defined?(ArfiSpec::MySQLDB)
 
 RSpec.configure do |config|
   # If DB isn't available, skip :db specs but still run everything else
-  config.filter_run_excluding db: true unless ArfiSpec::DB.available?
+  config.filter_run_excluding pgsql: true unless ArfiSpec::PgSQLDB.available?
+  config.filter_run_excluding mysql: true unless ArfiSpec::MySQLDB.available?
 
   # Only reset schema for DB specs
-  config.before(:each, :db) do
-    ArfiSpec::DB.reset_public_schema!
+  config.before(:each, :pgsql) do
+    ArfiSpec::PgSQLDB.reset_public_schema!
+  end
+
+  config.before(:each, :mysql) do
+    ArfiSpec::MySQLDB.connect!
+    ArfiSpec::MySQLDB.reset!
   end
 end

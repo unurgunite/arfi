@@ -41,7 +41,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'docscribe'
   spec.add_development_dependency 'dotenv'
   spec.add_development_dependency 'irb', '>= 1.15'
-  spec.add_development_dependency 'pg'
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'rubocop', '>= 1.21'
   spec.add_development_dependency 'rubocop-performance'

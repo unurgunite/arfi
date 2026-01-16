@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe 'ARFI Postgres DatabaseStatementsPatch', :db do
+RSpec.describe 'ARFI Postgres DatabaseStatementsPatch', :pgsql do
   include ArfiSpec::TmpRoot
 
   it 'reloads functions and retries when a managed function is missing' do

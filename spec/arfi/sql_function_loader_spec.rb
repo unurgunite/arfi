@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe Arfi::SqlFunctionLoader, :db do
+RSpec.describe Arfi::SqlFunctionLoader, :pgsql do
   include ArfiSpec::TmpRoot
 
   it 'loads generic functions from db/functions' do

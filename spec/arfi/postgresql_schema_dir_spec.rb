@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'ARFI schema dir loading', :db do
+RSpec.describe 'ARFI schema dir loading', :pgsql do
   include ArfiSpec::TmpRoot
 
   it 'loads functions from db/functions/postgresql/<schema> and allows schema-qualified calls' do

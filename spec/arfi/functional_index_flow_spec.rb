@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe 'functional index flow', :db do
+RSpec.describe 'functional index flow', :pgsql do
   include ArfiSpec::TmpRoot
 
   it 'fails without function, succeeds after loader' do

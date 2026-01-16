@@ -47,6 +47,19 @@ jobs:
           --health-timeout 3s
           --health-retries 30
 
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: arfi_test
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ppassword --silent"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
+
     strategy:
       fail-fast: false
       matrix:
@@ -68,9 +81,15 @@ jobs:
 
     env:
       ARFI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/arfi_test
+      ARFI_MYSQL_URL: mysql2://root:password@127.0.0.1:3306/arfi_test
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install native deps (mysql2)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -94,8 +113,16 @@ jobs:
           echo "Postgres did not become ready" >&2
           exit 1
 
+      - name: Wait for MySQL
+        run: |
+          for i in {1..60}; do
+            mysqladmin ping -h 127.0.0.1 -ppassword --silent && exit 0
+            sleep 1
+          done
+          echo "MySQL did not become ready" >&2
+          exit 1
+
       - name: Run specs
         env:
           BUNDLE_GEMFILE: ${{ matrix.gemfile }}
-        run: |
-          bundle exec rspec
+        run: bundle exec rspec
