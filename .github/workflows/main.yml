@@ -28,6 +28,22 @@ jobs:
           bundle exec rbs collection install
           bundle exec steep check
 
+  test_docs:
+    name: Check docs with Docscribe gem
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Check docs
+        run: bundle exec docscribe --check lib spec
+
   test:
     name: Tests (matrix)
     runs-on: ubuntu-latest
@@ -157,5 +173,72 @@ jobs:
           ARFI_MYSQL_URL: trilogy://root:password@127.0.0.1:3306/arfi_test
         run: bundle exec rspec --tag mysql
 
-#      - name: Check docs
-#        run: bundle exec docscribe --check lib spec
+  test_mariadb:
+    name: Tests (MariaDB)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        ports: [ "5432:5432" ]
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: arfi_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d arfi_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
+
+      mariadb:
+        image: mariadb:11
+        ports: [ "3307:3306" ]
+        env:
+          MARIADB_ROOT_PASSWORD: password
+          MARIADB_DATABASE: arfi_test
+        options: >-
+          --health-cmd="mariadb-admin ping -h 127.0.0.1 -ppassword --silent"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ruby: "3.4"
+            gemfile: gemfiles/rails_8_1.gemfile
+
+    env:
+      BUNDLE_GEMFILE: ${{ matrix.gemfile }}
+      ARFI_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/arfi_test
+      ARFI_MYSQL_URL: mysql2://root:password@127.0.0.1:3307/arfi_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client mariadb-client
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Install bundle
+        run: bundle check || bundle install
+
+      - name: Wait for MariaDB
+        run: |
+          for i in {1..60}; do
+            mariadb-admin ping -h 127.0.0.1 -ppassword --silent && exit 0
+            sleep 1
+          done
+          echo "MariaDB did not become ready" >&2
+          exit 1
+
+      - name: Run specs
+        run: bundle exec rspec
