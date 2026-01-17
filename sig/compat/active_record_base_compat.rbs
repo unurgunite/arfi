@@ -1,0 +1,17 @@
+module ActiveRecord
+  class Base
+    def self.connection_handler: () -> ::ActiveRecord::ConnectionAdapters::ConnectionHandler
+
+    def self.clear_active_connections!: () -> void
+
+    def self.configurations: () -> ::ActiveRecord::DatabaseConfigurations
+  end
+
+  class DatabaseConfigurations::DatabaseConfig
+    def name: () -> ::String
+
+    def env_name: () -> ::String
+
+    def configuration_hash: () -> ::Hash[::Symbol | ::String, ::String | ::Integer | bool | nil]
+  end
+end

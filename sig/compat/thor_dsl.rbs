@@ -1,0 +1,8 @@
+class Thor
+  # Thor DSL methods used by ARFI
+  def self.subcommand: (::String name, ::Class klass) -> void
+
+  def self.default_task: (::Symbol name) -> void
+
+  def self.map: (::Hash[::String | ::Array[::String], ::Symbol] mapping) -> void
+end

@@ -306,6 +306,7 @@ module Arfi
         root = Rails.root.join(ROOT_DIR)
         adapter = adapter_opt
 
+        # @type var out: Array[String]
         out = []
 
         if adapter.nil?
@@ -342,6 +343,7 @@ module Arfi
 
       def infer_adapter_from_config
         # Try to avoid connecting to DB: read Rails configs
+        # @type var cfgs: Array[ActiveRecord::DatabaseConfigurations::DatabaseConfig]
         cfgs =
           if ActiveRecord::Base.respond_to?(:configurations) && ActiveRecord::Base.configurations
             ActiveRecord::Base.configurations.configurations.select { _1.env_name == Rails.env } # steep:ignore NoMethod
@@ -368,6 +370,7 @@ module Arfi
         root = Rails.root.join(ROOT_DIR)
         raise Arfi::Errors::NoFunctionsDir unless root.directory?
 
+        # @type var candidates: Array[{ key: String, schema: String, function: String, source: String, origin: String, priority: Integer, path: String }]
         candidates = []
 
         # generic (public)
@@ -400,6 +403,7 @@ module Arfi
         end
 
         # Group by identity key = schema + function name (basename)
+        # @type var by_key: Hash[String, Array[{ key: String, schema: String, function: String, source: String, origin: String, priority: Integer, path: String }]]
         by_key = Hash.new { |h, k| h[k] = [] }
         candidates.each do |c|
           by_key[c[:key]] << c
@@ -408,16 +412,22 @@ module Arfi
         # Sort within each key by priority
         by_key.each_value { |arr| arr.sort_by! { |c| c[:priority] } }
 
+        # @type var rows: Array[Hash[Symbol, (String | Integer | bool | nil | Array[String])]]
         rows = []
         by_key.keys.sort.each do |key|
           arr = by_key[key]
           chosen = arr.max_by { |c| c[:priority] }
+          next unless chosen
+
+          chosen_path = chosen[:path]
           shadowed = (arr - [chosen])
 
-          if options[:all] # steep:ignore NoMethod
-            # show all candidates
+          if options[:all]
             arr.sort_by { |c| [-c[:priority], c[:schema], c[:function]] }.each do |c|
-              rows << c.merge(chosen: (c == chosen), shadowed_by: (c == chosen ? nil : rel(chosen[:path])))
+              rows << c.merge(
+                chosen: (c == chosen),
+                shadowed_by: (c == chosen ? nil : rel(chosen_path))
+              )
             end
           else
             rows << chosen.merge(chosen: true, shadowed: shadowed.map { rel(_1[:path]) })
@@ -463,6 +473,7 @@ module Arfi
           r
         end
 
+        # @type var widths: Hash[String, Integer]
         widths = {}
         cols.each do |c|
           widths[c] = ([c.length] + table.map { |r| r[c.to_sym].to_s.length }).max

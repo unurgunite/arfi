@@ -129,6 +129,7 @@ module Arfi
         root = Rails.root.join('db', 'functions')
         return [] unless root.directory?
 
+        # @type var items: Array[{ schema: String, base: String, path: String, priority: Integer }]
         items = []
 
         # Generic public (legacy + explicit)
@@ -175,6 +176,7 @@ module Arfi
       end
 
       def finalize_items(items)
+        # @type var chosen: Hash[String, { schema: String, base: String, path: String, priority: Integer }]
         chosen = {}
 
         items.each do |item|
