@@ -6,6 +6,13 @@ require 'rails'
 
 module Arfi
   module Commands
+    # Initializes ARFI directory structure inside a Rails project.
+    #
+    # Creates/ensures:
+    # - db/functions/public
+    # - db/functions/<adapter>/public (when adapter provided)
+    #
+    # @api public
     class Init < Thor
       ADAPTERS = %i[postgresql mysql].freeze
       ROOT_DIR = 'db/functions'
@@ -16,12 +23,18 @@ module Arfi
       # UX aliases
       map %w[setup] => :create
 
-      # steep:ignore:start
       desc 'create', 'Initialize project by creating db/functions structure (explicit public schema dirs)'
       option :adapter, type: :string,
                        desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
                        banner: 'adapter'
-      # steep:ignore:end
+
+      # +Arfi::Commands::Init#create+ -> Object
+      #
+      # Create (or ensure) ARFI directories exist.
+      #
+      # @raise [Arfi::Errors::InvalidSchemaFormat]
+      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @return [void]
       def create
         validate_schema_format!
 
@@ -47,6 +60,13 @@ module Arfi
 
       private
 
+      # +Arfi::Commands::Init#validate_schema_format!+ -> Object
+      #
+      # Validate that Rails schema format is ruby (:ruby / schema.rb).
+      #
+      # @private
+      # @raise [Arfi::Errors::InvalidSchemaFormat]
+      # @return [void]
       def validate_schema_format!
         fmt =
           if defined?(Rails) && Rails.application

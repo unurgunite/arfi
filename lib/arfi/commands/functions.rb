@@ -121,6 +121,13 @@ module Arfi
 
       private
 
+      # +Arfi::Commands::Functions#validate_schema_format!+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @raise [Arfi::Errors::InvalidSchemaFormat]
+      # @return [Object]
       def validate_schema_format!
         fmt =
           if defined?(Rails) && Rails.application
@@ -132,6 +139,13 @@ module Arfi
         raise Arfi::Errors::InvalidSchemaFormat unless fmt == :ruby
       end
 
+      # +Arfi::Commands::Functions#validate_adapter_option!+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @return [Object]
       def validate_adapter_option!
         return if adapter_opt.nil?
         raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.include?(adapter_opt.to_sym)
@@ -164,12 +178,27 @@ module Arfi
         [schema, parsed_fn]
       end
 
+      # +Arfi::Commands::Functions#schema_opt+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @return [Object]
       def schema_opt
         # steep:ignore:start
         options[:schema]&.to_s
         # steep:ignore:end
       end
 
+      # +Arfi::Commands::Functions#validate_identifiers!+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] schema Param documentation.
+      # @param [Object] fn Param documentation.
+      # @raise [ArgumentError]
+      # @return [Object]
       def validate_identifiers!(schema, fn)
         raise ArgumentError, "Invalid function name: #{fn.inspect}" unless IDENT.match?(fn)
         return if schema.nil?
@@ -180,6 +209,15 @@ module Arfi
         raise ArgumentError, 'Schema-qualified functions are only supported for PostgreSQL (adapter=postgresql).'
       end
 
+      # +Arfi::Commands::Functions#ensure_dirs!+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] adapter Param documentation.
+      # @param [Object] schema Param documentation.
+      # @raise [Arfi::Errors::NoFunctionsDir]
+      # @return [Object]
       def ensure_dirs!(adapter:, schema:)
         root = Rails.root.join(ROOT_DIR)
 
@@ -203,6 +241,16 @@ module Arfi
         FileUtils.mkdir_p(adapter_root.join(sch))
       end
 
+      # +Arfi::Commands::Functions#build_sql_function+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] schema Param documentation.
+      # @param [Object] fn Param documentation.
+      # @param [Object] original_ref Param documentation.
+      # @raise [StandardError]
+      # @return [Object]
       def build_sql_function(schema, fn, original_ref:)
         return build_from_file(schema, fn, original_ref: original_ref) if options[:template] # steep:ignore NoMethod
 
@@ -262,6 +310,15 @@ module Arfi
         # steep:ignore:end
       end
 
+      # +Arfi::Commands::Functions#write_file+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] schema Param documentation.
+      # @param [Object] fn Param documentation.
+      # @param [Object] content Param documentation.
+      # @return [Object]
       def write_file(schema, fn, content)
         path = canonical_path(schema, fn)
 
@@ -274,6 +331,16 @@ module Arfi
         puts "Created: #{rel(path)}"
       end
 
+      # +Arfi::Commands::Functions#canonical_path+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] schema Param documentation.
+      # @param [Object] fn Param documentation.
+      # @raise [ArgumentError]
+      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @return [Object]
       def canonical_path(schema, fn)
         root = Rails.root.join(ROOT_DIR)
         adapter = adapter_opt
@@ -335,12 +402,26 @@ module Arfi
         out.uniq
       end
 
+      # +Arfi::Commands::Functions#adapter_opt+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @return [Object]
       def adapter_opt
         # steep:ignore:start
         options[:adapter]&.to_s
         # steep:ignore:end
       end
 
+      # +Arfi::Commands::Functions#infer_adapter_from_config+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @raise [StandardError]
+      # @return [Object]
+      # @return [nil] if StandardError
       def infer_adapter_from_config
         # Try to avoid connecting to DB: read Rails configs
         # @type var cfgs: Array[ActiveRecord::DatabaseConfigurations::DatabaseConfig]
@@ -437,6 +518,17 @@ module Arfi
         rows
       end
 
+      # +Arfi::Commands::Functions#collect_candidates+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] glob Param documentation.
+      # @param [Object] schema Param documentation.
+      # @param [Object] source Param documentation.
+      # @param [Object] origin Param documentation.
+      # @param [Object] priority Param documentation.
+      # @return [Object]
       def collect_candidates(glob:, schema:, source:, origin:, priority:)
         Dir.glob(glob.to_s).filter_map do |path|
           base = File.basename(path)
@@ -455,6 +547,13 @@ module Arfi
         end
       end
 
+      # +Arfi::Commands::Functions#print_table+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] rows Param documentation.
+      # @return [Object]
       def print_table(rows)
         # rows may include extra fields depending on --all
         cols =
@@ -487,6 +586,13 @@ module Arfi
         end
       end
 
+      # +Arfi::Commands::Functions#rel+ -> Object
+      #
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] path Param documentation.
+      # @return [Object]
       def rel(path)
         root = Rails.root.to_s
         p = path.to_s

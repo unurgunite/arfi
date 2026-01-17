@@ -8,6 +8,14 @@ module ArfiSpec
   module TmpRoot
     module_function
 
+    # +ArfiSpec::TmpRoot.with_tmp_root+ -> Object
+    #
+    # Create a temporary Rails.root with ARFI directory structure, stub Rails.root,
+    # yield the root Pathname, then clean it up.
+    #
+    # @private
+    # @yieldparam [Pathname] root Param documentation.
+    # @return [Object]
     def with_tmp_root
       Dir.mktmpdir('arfi-spec-') do |dir|
         root = Pathname.new(dir)
