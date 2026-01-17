@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint_typecheck:
-    name: Lint + Typecheck
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
 
     steps:
@@ -23,12 +23,25 @@ jobs:
       - name: RuboCop
         run: bundle exec rubocop
 
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
       - name: Steep
         run: |
           bundle exec rbs collection install
           bundle exec steep check
 
-  test_docs:
+  docs:
     name: Check docs with Docscribe gem
     runs-on: ubuntu-latest
 
