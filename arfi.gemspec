@@ -8,9 +8,10 @@ Gem::Specification.new do |spec|
   spec.authors = ['unurgunite']
   spec.email = ['senpaiguru1488@gmail.com']
 
-  spec.summary = 'ActiveRecord Functional Indexes.'
+  spec.summary = 'ActiveRecord Functions Integration.'
   spec.description = <<~STR
-    ARFI — ActiveRecord Functional Indexes. Provides the ability to create and maintain functions that can be used as indexes, as well as in other parts of the project without switching to structure.sql.
+    ARFI — ActiveRecord Functions Integration. Provides the ability to create and maintain SQL functions that
+    can be used across the project without switching to structure.sql.
   STR
   spec.homepage = 'https://github.com/unurgunite/arfi'
   spec.license = 'MIT'

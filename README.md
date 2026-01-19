@@ -7,40 +7,45 @@
 
 ---
 
-> [!WARNING]
-> This project only supports PostgreSQL and MySQL databases. SQLite3 will be supported in the future as well as other
-> databases supported by Rails.
+ARFI – *ActiveRecord Functions Integration*
+
+ARFI helps Rails apps create and maintain **custom SQL functions** (often used for functional indexes and query helpers)
+without switching from `schema.rb` to `structure.sql`.
+
+ARFI follows a **"current state"** model: your repository contains the current function definitions in
+`db/functions/**`, and ARFI loads them into the database automatically during common Rails DB tasks
+(e.g., `db:prepare`, `db:test:prepare`, `db:migrate`, etc.).
+
+PostgreSQL bonus: ARFI can recover at runtime from `PG::UndefinedFunction` by loading managed function files and
+retrying the failed query once (thread-guarded).
+
+ARFI supports both single-DB and multi-DB Rails setups.
+
+Demo project: https://github.com/unurgunite/poc_arfi_72
 
 ---
-
-ARFI – *ActiveRecord Functional Indexes*
-
-The ARFI gem provides the ability to create and maintain custom SQL functions for ActiveRecord models without switching
-to `structure.sql` (an SQL-based schema). You can use your own SQL functions in any part of the project, from migrations
-and models to everything else. There is a working example in
-the [demo project](https://github.com/unurgunite/poc_arfi_72). All instructions are described
-in [README](https://github.com/unurgunite/poc_arfi_72/blob/master/README.md). ARFI supports all types of database
-architectures implemented in Rails, suitable for both working with single databases and for simultaneous work with
-multiple databases in the same environment.
 
 * [ARFI](#arfi)
     * [Installation](#installation)
     * [Usage](#usage)
         * [Internal documentation](#internal-documentation)
         * [CLI](#cli)
-        * [Project creation](#project-creation)
-        * [Index creation](#index-creation)
-        * [Index destroy](#index-destroy)
+        * [Project initialization](#project-initialization)
+        * [Directory layout (1.0.0+)](#directory-layout-100)
+        * [Function creation](#function-creation)
+        * [Function destroy](#function-destroy)
         * [Additional help](#additional-help)
     * [Demo](#demo)
     * [Library features](#library-features)
     * [Roadmap](#roadmap)
     * [Commands](#commands)
-        * [Function creation](#function-creation)
-        * [Function destroy](#function-destroy)
+        * [Function creation](#function-creation-1)
+        * [Function destroy](#function-destroy-1)
             * [Options](#options)
                 * [`--template` option](#--template-option)
                 * [`--adapter` option](#--adapter-option)
+                * [`--schema` option](#--schema-option)
+                * [`--force` option](#--force-option)
     * [Limitations](#limitations)
     * [Development](#development)
         * [Build from source](#build-from-source)
@@ -68,23 +73,78 @@ Internal documentation available at https://github.com/unurgunite/arfi_docs.
 
 ARFI uses Thor as a command line interface (CLI) instead of Rake, so it has a specific DSL.
 
-### Project creation
+### Project initialization
 
-Firstly, run `bundle exec arfi project create` to create a new project. This command will create `db/functions`
-directory. ARFI uses `db/functions` directory to store your SQL functions.
+Run:
+
+```bash
+bundle exec arfi init
+```
+
+This ensures the directory structure exists:
+
+```
+db/functions/public
+db/functions/postgresql/public
+db/functions/mysql/public
+```
+
+Backwards-compatible alias:
+
+```bash
+bundle exec arfi project create
+```
+
+### Directory layout (1.0.0+)
+
+Canonical layout (explicit `public`):
+
+- Generic public: `db/functions/public/<function>.sql`
+- PostgreSQL public: `db/functions/postgresql/public/<function>.sql`
+- PostgreSQL schema: `db/functions/postgresql/<schema>/<function>.sql`
+- MySQL / MariaDB / Trilogy public: `db/functions/mysql/public/<function>.sql`
+
+Adapter-specific files override generic files by basename (same `<function>.sql`).
+Files starting with `_` are ignored.
 
 ### Function creation
 
-Run `bundle exec arfi f_idx create function_name` to create a new function. New SQL function will be created in
-`db/functions` directory under `function_name_v01.sql` name. Edit your function and run `bundle exec rails db:migrate`.
-You can also use custom template for functions using `--template` flag, this behaviour is described below.
-Type `bundle exec arfi f_idx help create` for additional info.
+Run:
+
+```bash
+bundle exec arfi functions create function_name
+```
+
+The file location depends on adapter:
+
+- PostgreSQL: `db/functions/postgresql/public/function_name.sql`
+- MySQL/Trilogy: `db/functions/mysql/public/function_name.sql`
+- Generic: `db/functions/public/function_name.sql`
+
+Edit the function SQL and run your usual DB task (`db:migrate`, `db:prepare`, etc.).
+
+You can also use a custom template for functions using the `--template` flag; this behaviour is described below.
+Type `bundle exec arfi functions help create` for additional info.
+
+Backwards-compatible alias:
+
+```bash
+bundle exec arfi f_idx create function_name
+```
 
 ### Function destroy
 
-If you want to destroy your function, run `bundle exec arfi f_idx destroy function_name [revision (default 1)]`. Please
-note that after deleting the function, it will still be available, but if you run "bundle exec rails db:migrate" again,
-an error will occur when using the function. Enter `bundle exec arfi f_idx help destroy` for more information.
+Destroy deletes the function file from disk:
+
+```bash
+bundle exec arfi functions destroy function_name
+```
+
+Backwards-compatible alias:
+
+```bash
+bundle exec arfi f_idx destroy function_name
+```
 
 ### Additional help
 
@@ -97,43 +157,42 @@ README is also available.
 
 ## Library features
 
-1. ARFI supports about all types of database initialization. It respects your database schema format and database
-   configuration.
+1. ARFI supports most Rails database initialization flows and respects your schema format and database configuration.
 
-   | Task             | Completed                                                    |
-   |------------------|--------------------------------------------------------------|
-   | db:migrate       | :white_check_mark:                                           |
-   | db:setup         | :white_check_mark:                                           |
-   | db:prepare       | :white_check_mark:                                           |
-   | db:schema:load   | :white_check_mark:                                           |
-   | db:reset         | :white_check_mark:                                           |
-   | db:setup:db_name | In progress (see [limitations][1]) :arrows_counterclockwise: |
+   | Task                     | Supported |
+   |--------------------------|-----------|
+   | db:migrate               | ✅         |
+   | db:setup                 | ✅         |
+   | db:prepare               | ✅         |
+   | db:test:prepare          | ✅         |
+   | db:schema:load           | ✅         |
+   | db:migrate:db_name       | ✅         |
+   | db:prepare:db_name       | ✅         |
+   | db:schema:load:db_name   | ✅         |
 
-2. Database support. ARFI supports PostgreSQL and MySQL databases and projects with multiple databases at the same time.
+2. Database support. ARFI supports PostgreSQL and MySQL-compatible databases, including multi-db setups.
 
-   | DB adapter | Tested                                |
-   |------------|---------------------------------------|
-   | PostgreSQL | :white_check_mark:                    |
-   | MySQL      | :white_check_mark:                    |
-   | SQLite3    | In progress :arrows_counterclockwise: |
+   | DB adapter / client   | Tested                          |
+   |-----------------------|---------------------------------|
+   | PostgreSQL            | ✅                               |
+   | MySQL (mysql2)        | ✅                               |
+   | MariaDB (mysql2)      | ✅                               |
+   | Trilogy (Rails 7.1+)  | ✅                               |
+   | SQLite3               | Not supported (see Limitations) |
 
 3. Rails support
 
-   | Rails version | Tested                                |
-   |---------------|---------------------------------------|
-   | 8             | :white_check_mark:                    |
-   | 7             | :white_check_mark:                    |
-   | 6             | In progress :arrows_counterclockwise: |
+   | Rails version | Tested |
+   |---------------|--------|
+   | 8             | ✅      |
+   | 7             | ✅      |
+   | 6             | ✅      |
 
 ## Roadmap
 
-1. ~~Custom template for SQL functions using `--template` flag;~~
-2. ~~Multidb support (Rails 6+ feature);~~
-3. Add support for 4+ ActiveRecord;
-4. Add RSpec tests;
-5. ~~Add separate YARD doc page;~~
-6. ~~Update CI/CD;~~
-7. Add support for Ruby 2.7+.
+1. Add `functions validate` / `functions doctor` command group (planned for 1.1.0);
+2. Add functions autoloader (v1.2.0);
+3. Add more adapters (Oracle, MSSQL).
 
 ## Commands
 
@@ -142,79 +201,120 @@ ARFI uses Thor as a command line interface.
 
 ### Function creation
 
-ARFI supports creation of SQL functions. To create a new function, run `bundle exec arfi f_idx create function_name`.
+To create a new function file, run:
+
+```bash
+bundle exec arfi functions create function_name
+```
+
 Also, there are some options:
 
-| Option name  | Description                                                                          | Possible values            | Default value                                                 |
-|--------------|--------------------------------------------------------------------------------------|----------------------------|---------------------------------------------------------------|
-| `--template` | use custom template                                                                  | path within you filesystem | nil (will be used default template for each type of adapters) |
-| `--adapter`  | adapter specific function creation due to syntax differences between different RDBMS | postgresql, mysql          | nil (function will be stored in generic `db/functions`)       |
+| Option name  | Description                                                           | Possible values               | Default value                       |
+|--------------|-----------------------------------------------------------------------|-------------------------------|-------------------------------------|
+| `--template` | Use custom Ruby template that returns SQL                             | path within your filesystem   | nil                                 |
+| `--adapter`  | Store function in adapter directory and use adapter skeleton/template | postgresql, mysql, trilogy    | nil (generic `db/functions/public`) |
+| `--schema`   | PostgreSQL schema (alternative to `schema.function` form)             | schema name (postgresql only) | public                              |
+| `--force`    | Overwrite existing function file if it already exists                 | true/false                    | false                               |
+
+Backwards-compatible alias:
+
+```bash
+bundle exec arfi f_idx create function_name
+```
 
 ### Function destroy
 
-ARFI supports destroy of SQL functions. To destroy a function, run
-`bundle exec arfi f_idx destroy function_name [revision (1 by default)]`.
+To destroy a function file, run:
 
-| Option name  | Description                  | Possible values   | Default value                                              |
-|--------------|------------------------------|-------------------|------------------------------------------------------------|
-| `--revision` | Function revision to destroy | Integer           | 1                                                          |
-| `--adapter`  | adapter specific function    | postgresql, mysql | nil (function will be destroyed in generic `db/functions`) |
+```bash
+bundle exec arfi functions destroy function_name
+```
+
+| Option name | Description                                          | Possible values               | Default value |
+|-------------|------------------------------------------------------|-------------------------------|---------------|
+| `--adapter` | Adapter-specific function directory                  | postgresql, mysql, trilogy    | nil (generic) |
+| `--schema`  | PostgreSQL schema (alternative to `schema.function`) | schema name (postgresql only) | public        |
+
+Backwards-compatible alias:
+
+```bash
+bundle exec arfi f_idx destroy function_name
+```
 
 #### Options
 
 ##### `--template` option
 
 This option is used for creating an SQL function. In this case, the function will not be created with the default
-template, but with user defined. There are some rules for templates:
+template, but with a user-defined one. There are some rules for templates:
 
-1. The template must be written in a Ruby-compatible syntax: the function must be placed in a HEREDOC statement and must
-   use interpolation for variables. If you need to take a more comprehensive approach to the issue of function
-   generation, you can try using your own methods in the template file. No matter what you write there, the main rule is
-   that your main method should return a string with a function template, as described below.
-2. ARFI supports dynamic variables in templates, but only one at the moment. You need to specify `index_name`
-   variable as below. In feature updated ARFI will support more variables. Here are default templates in ARFI for
-   PostgreSQL and MySQL:
+1. The template must be written in Ruby-compatible syntax: the function must be placed in a HEREDOC statement and must
+   use interpolation for variables. You can use helper methods in the template file. The main rule is that the template
+   must evaluate to a String with SQL.
+2. ARFI supports dynamic variables in templates:
+    - `index_name` (backward compatible) / `function_name`
+    - `schema_name`
+    - `qualified_name`
+    - `original_ref`
+
+   Default templates:
 
    PostgreSQL:
-    ```ruby
-    <<~SQL
-      CREATE OR REPLACE FUNCTION #{index_name}() RETURNS TEXT[]
-      LANGUAGE SQL
-      IMMUTABLE AS
-      $$
-        -- Function body here
-      $$
-    SQL
-    ```
+   ```ruby
+   <<~SQL
+     CREATE OR REPLACE FUNCTION #{qualified_name}() RETURNS TEXT[]
+     LANGUAGE SQL
+     IMMUTABLE AS
+     $$
+       -- Function body here
+     $$
+   SQL
+   ```
+
    MySQL:
-    ```ruby
-    <<~SQL
-      CREATE FUNCTION #{index_name} ()
-      RETURNS return_type
-      BEGIN
-        -- Function body here
-      END;
-    SQL
-    ```
+   ```ruby
+   <<~SQL
+     CREATE FUNCTION #{function_name} ()
+     RETURNS return_type
+     BEGIN
+       -- Function body here
+     END;
+   SQL
+   ```
+
 3. By default ARFI uses PostgreSQL template.
 
 ##### `--adapter` option
 
 This option is used both when destroying and when creating an SQL function. In this case, the function will not be
-created in the default directory `db/functions`, but in the child `db/functions/#{adapter}`. Supported adapters:
-`postgresql`and `mysql`, but there will be more in the future.
+created in the default directory `db/functions/public`, but in an adapter directory.
+
+Supported adapters: `postgresql`, `mysql`, `trilogy`.
+
+##### `--schema` option
+
+PostgreSQL-only option that controls schema directory:
+
+- `--adapter=postgresql --schema=audit` => `db/functions/postgresql/audit/<fn>.sql`
+
+You can also pass schema-qualified names: `audit.my_fn`.
+
+##### `--force` option
+
+Overwrite existing function file if it already exists.
 
 ## Limitations
 
-Currently, ARFI has a limitation for `db:setup:db_name` task due to the fact how Rails manage this rake task. More info
-here: [limitations][1]. This command will work, but it is not recommended to use it. Note that this limitation applies
-only to multi-db setup, default `db:setup` will work as expected.
+- SQLite3 is not supported for "stored functions from SQL files" because SQLite user-defined functions are typically
+  registered per connection via the client library, not created via `CREATE FUNCTION` SQL.
+- MySQL does not support `CREATE OR REPLACE FUNCTION` in the same way as PostgreSQL; plan function replacement strategy
+  accordingly.
 
 ## Development
 
 ### Build from source
 
-The manual installation includes installation via command line interface. it is practically no different from what
+The manual installation includes installation via command line interface. It is practically no different from what
 happens during the automatic build of the project:
 
 ```shell
@@ -222,7 +322,7 @@ git clone https://github.com/unurgunite/arfi.git
 cd arfi
 bundle install
 gem build arfi.gemspec
-gem install arfi-0.5.1.gem
+gem install arfi-1.0.0.gem
 ```
 
 Also, you can run `bin/setup` to automatically install everything needed.
@@ -233,14 +333,14 @@ ARFI is built on top of the following gems:
 
 | Dependencies | Description                                                                                |
 |--------------|--------------------------------------------------------------------------------------------|
-| ActiveRecord | Used to patch `ActiveRecord::Base` module with new methods.                                |
+| ActiveRecord | Used to patch `ActiveRecord::Base` module with new methods                                 |
 | Rails        | Used for fetching project settings (database connection settings, Rails environment, etc.) |
-| Thor         | For CLI development.                                                                       |
-| Rubocop      | For static code analysis.                                                                  |
-| Rake         | For patching built-in Rails Rake tasks.                                                    |
-| Steep        | For static type checking.                                                                  |
-| RBS          | For static type checking.                                                                  |
-| YARD         | For generating documentation.                                                              |
+| Thor         | For CLI development                                                                        |
+| Rubocop      | For static code analysis                                                                   |
+| Rake         | For patching built-in Rails Rake tasks                                                     |
+| Steep        | For static type checking                                                                   |
+| RBS          | For static type checking                                                                   |
+| YARD         | For generating documentation                                                               |
 
 ## Contributing
 
@@ -250,7 +350,8 @@ the [code of conduct](https://github.com/unurgunite/arfi/blob/master/CODE_OF_CON
 
 ## Miscellaneous
 
-ARFI is highly inspired by https://github.com/teoljungberg/fx project.
+ARFI differs by focusing on keeping functions in sync from the current repository state (and optional runtime recovery
+on PostgreSQL).
 
 ## License
 
@@ -260,5 +361,3 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 Everyone interacting in the ARFI project's codebases, issue trackers, chat rooms and mailing lists is expected to follow
 the [code of conduct](https://github.com/unurgunite/arfi/blob/master/CODE_OF_CONDUCT.md).
-
-[1]: https://blog.saeloun.com/2021/10/27/rails-7-adds-database-specific-setup/#limitation
