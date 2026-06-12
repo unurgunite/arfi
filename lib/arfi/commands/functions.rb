@@ -18,6 +18,7 @@ module Arfi
     DEFAULT_SCHEMA = 'public'
     IDENT = /\A[a-zA-Z_][a-zA-Z0-9_]*\z/.freeze
 
+    # Thor CLI for managing SQL function files.
     class Functions < Thor
       include FunctionsHelpers
       include FunctionsCreation

@@ -63,7 +63,7 @@ module Arfi
       # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection to validate.
       # @raise [Arfi::Errors::AdapterNotSupported] if +conn+ adapter is not PostgreSQL, MySQL, or Trilogy.
       # @return [void]
-      def raise_unless_supported_adapter(conn)
+      def raise_unless_supported_adapter(conn) # rubocop:disable SortedMethodsByCall/Waterfall
         allowed = %w[
           ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
           ActiveRecord::ConnectionAdapters::Mysql2Adapter
