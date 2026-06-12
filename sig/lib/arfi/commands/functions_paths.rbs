@@ -1,0 +1,25 @@
+module Arfi
+  module Commands
+    module FunctionsPaths : Arfi::Commands::Functions
+      ROOT_DIR: "db/functions"
+
+      DEFAULT_SCHEMA: "public"
+
+      private
+
+      def canonical_path: (String? schema, String function_name) -> String
+
+      def function_paths: (String? schema, String function_name) -> Array[String]
+
+      def generic_canonical_path: (::Pathname root, String? schema, String function_name) -> String
+
+      def adapter_canonical_path: (::Pathname root, String? schema, String function_name) -> String
+
+      def generic_function_paths: (::Pathname root, String function_name) -> Array[String]
+
+      def postgresql_function_paths: (::Pathname root, String? schema, String function_name) -> Array[String]
+
+      def mysql_function_paths: (::Pathname root, String function_name) -> Array[String]
+    end
+  end
+end

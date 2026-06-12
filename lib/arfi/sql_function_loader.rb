@@ -163,7 +163,7 @@ module Arfi
       # @raise [StandardError] if the SQL file fails to execute.
       # @return [void]
       def load_sql_file(conn, file, verbose, task_name)
-        sql = File.read(file).strip
+        sql = File.read(file.to_s).strip
         return if sql.empty?
 
         begin
@@ -316,7 +316,7 @@ module Arfi
       # @param [Pathname] adapter_root The adapter root directory.
       # @return [Array<Hash>] collected SQL file metadata.
       def collect_adapter_public_sql_files(adapter_root)
-        items = []
+        items = [] # steep:ignore
         items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
         items.concat collect_sql(glob: adapter_root.join('public', '*.sql'), schema: 'public', priority: 9)
         items

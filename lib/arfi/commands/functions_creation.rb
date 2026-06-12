@@ -25,12 +25,13 @@ module Arfi
       def build_sql_function(schema, function_name, original_ref:)
         return build_from_file(schema, function_name, original_ref: original_ref) if options[:template]
 
-        if adapter_opt.nil? || adapter_opt == 'postgresql'
+        opt = adapter_opt
+        if opt.nil? || opt == 'postgresql'
           build_postgresql_skeleton(schema, function_name)
-        elsif %w[mysql trilogy].include?(adapter_opt)
+        elsif %w[mysql trilogy].include?(opt)
           build_mysql_skeleton(function_name)
         else
-          raise "Unknown adapter: #{adapter_opt}. Supported adapters: #{ADAPTERS.join(', ')}"
+          raise "Unknown adapter: #{opt}. Supported adapters: #{ADAPTERS.join(', ')}"
         end
       end
 
@@ -63,7 +64,7 @@ module Arfi
 
       def evaluate_template(function_name, schema_name, qualified_name, original_ref)
         tpl = File.read(options[:template])
-        RubyVM::InstructionSequence.compile(<<~RUBY).eval
+        RubyVM::InstructionSequence.compile(<<~RUBY).eval # steep:ignore
           index_name     = #{function_name.inspect}
           function_name  = #{function_name.inspect}
           schema_name    = #{schema_name.inspect}

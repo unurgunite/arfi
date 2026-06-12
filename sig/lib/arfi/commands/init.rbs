@@ -8,11 +8,15 @@ module Arfi
       DEFAULT_SCHEMA: "public"
 
       # steep:ignore:end
-      def create: () -> (nil | untyped)
+      def create: () -> void
 
       private
 
-      def validate_schema_format!: () -> untyped
+      def validate_schema_format!: () -> void
+
+      def create_base_dirs: () -> void
+
+      def create_adapter_dirs: () -> void
     end
   end
 end

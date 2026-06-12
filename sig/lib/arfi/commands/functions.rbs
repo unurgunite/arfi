@@ -1,74 +1,99 @@
 module Arfi
   module Commands
+    ADAPTERS: ::Array[:postgresql | :mysql | :trilogy]
+
+    ROOT_DIR: "db/functions"
+
+    DEFAULT_SCHEMA: "public"
+
+    IDENT: ::Regexp
+
+    type candidate = {
+      key: String,
+      schema: String,
+      function: String,
+      source: String,
+      origin: String,
+      priority: Integer,
+      path: String
+    }
+
+    type resolved_row = {
+      key: String,
+      schema: String,
+      function: String,
+      source: String,
+      origin: String,
+      priority: Integer,
+      path: String,
+      ?chosen: bool,
+      ?shadowed: Array[String],
+      ?shadowed_by: String?
+    }
+
     class Functions < Thor
-      ADAPTERS: ::Array[:postgresql | :mysql | :trilogy]
-
-      ROOT_DIR: "db/functions"
-
-      DEFAULT_SCHEMA: "public"
-
-      IDENT: ::Regexp
+      # steep:ignore:end
+      def create: (String function_ref) -> void
 
       # steep:ignore:end
-      def create: (untyped function_ref) -> untyped
+      def destroy: (String function_ref) -> void
 
       # steep:ignore:end
-      def destroy: (untyped function_ref) -> (nil | untyped)
-
-      # steep:ignore:end
-      def list: () -> untyped
+      def list: () -> void
 
       private
 
-      def validate_schema_format!: () -> untyped
+      def validate_schema_format!: () -> void
 
-      def validate_adapter_option!: () -> (nil | untyped)
+      def validate_adapter_option!: () -> void
 
-      # Accept:
-      # - "my_fn"
-      # - "public.my_fn"
-      # - "audit.my_fn"
-      # and/or --schema=audit + "my_fn"
-      def parse_function_ref: (untyped ref) -> ::Array[untyped]
+      def parse_function_ref: (String ref) -> [String?, String]
 
-      def schema_opt: () -> untyped
+      def schema_opt: () -> String?
 
-      def validate_identifiers!: (untyped schema, untyped fn) -> (nil | untyped)
+      def validate_identifiers!: (String? schema, String function_name) -> void
 
-      def ensure_dirs!: (adapter: untyped, schema: untyped) -> (nil | untyped)
+      def ensure_dirs!: (adapter: String?, schema: String?) -> void
 
-      def build_sql_function: (untyped schema, untyped fn, original_ref: untyped) -> (untyped | ::String)
+      def build_sql_function: (String? schema, String function_name, original_ref: String) -> String
 
-      # Template vars:
-      # - function_name / index_name: function name only
-      # - schema_name: postgres schema (defaults to public), else nil
-      # - qualified_name: "schema.fn" for postgres, else fn
-      def build_from_file: (untyped schema, untyped fn, original_ref: untyped) -> untyped
+      def build_from_file: (String? schema, String function_name, original_ref: String) -> String
 
-      def write_file: (untyped schema, untyped fn, untyped content) -> (nil | untyped)
+      def write_file: (String? schema, String function_name, String content) -> void
 
-      def canonical_path: (untyped schema, untyped fn) -> untyped
+      def canonical_path: (String? schema, String function_name) -> String
 
-      # For destroy/migration support: include legacy aliases too
-      def function_paths: (untyped schema, untyped fn) -> untyped
+      def function_paths: (String? schema, String function_name) -> Array[String]
 
-      def adapter_opt: () -> untyped
+      def adapter_opt: () -> String?
 
-      def infer_adapter_from_config: () -> untyped
+      def infer_adapter_from_config: () -> String?
 
-      # Priority (higher wins), same spirit as the loader I suggested earlier:
-      #  10: adapter explicit schema dir (postgresql/<schema>/fn.sql)
-      #   9: adapter explicit public dir (postgresql/public/fn.sql, mysql/public/fn.sql)
-      #   8: adapter legacy public       (postgresql/fn.sql, mysql/fn.sql)
-      #   2: generic explicit public     (public/fn.sql)
-      #   1: generic legacy public       (fn.sql)
-      def resolve_functions_for: (adapter: untyped) -> untyped
+      def resolve_functions_for: (adapter: String) -> Array[::Hash[Symbol, untyped]]
 
-      def collect_candidates: (glob: untyped, schema: untyped, source: untyped, origin: untyped, priority: untyped) -> untyped
+      def collect_candidates: (glob: ::Pathname, schema: String, source: String, origin: String, priority: Integer) -> Array[candidate]
 
-      def print_table: (untyped rows) -> untyped
+      def print_table: (Array[resolved_row] rows) -> void
 
-      def rel: (untyped path) -> untyped
+      def rel: (::Pathname | String path) -> String
+
+      def remove_function_file: (String? schema, String function_name) -> void
+
+      def resolve_adapter: () -> String
+
+      def render_list: (Array[::Hash[Symbol, untyped]] rows) -> void
+
+      def resolve_key_group: (Array[candidate] arr) -> Array[::Hash[Symbol, untyped]]
+
+      def resolve_schema_name: (String? schema) -> String?
+
+      def collect_all_candidates: (::Pathname root, String adapter) -> Array[candidate]
+
+      def group_candidates_by_key: (Array[candidate] candidates) -> ::Hash[String, Array[candidate]]
+
+      def build_resolved_rows: (::Hash[String, Array[candidate]] by_key) -> Array[::Hash[Symbol, untyped]]
+
+      def validate_function_ref!: (String ref) -> void
     end
   end
 end

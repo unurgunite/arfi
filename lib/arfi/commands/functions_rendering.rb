@@ -45,7 +45,7 @@ module Arfi
       end
 
       def calculate_widths(cols, table)
-        widths = {}
+        widths = {} # steep:ignore
         cols.each do |c|
           widths[c] = ([c.length] + table.map { |r| r[c.to_sym].to_s.length }).max
         end

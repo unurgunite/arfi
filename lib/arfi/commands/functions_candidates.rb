@@ -17,7 +17,7 @@ module Arfi
       end
 
       def group_candidates_by_key(candidates)
-        by_key = Hash.new { |h, k| h[k] = [] }
+        by_key = Hash.new { |h, k| h[k] = [] } # steep:ignore
         candidates.each do |c|
           by_key[c[:key]] << c
         end
@@ -38,7 +38,7 @@ module Arfi
       end
 
       def generic_candidates(root)
-        candidates = []
+        candidates = [] # steep:ignore
         candidates.concat collect_candidates(glob: root.join('*.sql'), schema: DEFAULT_SCHEMA, source: 'generic',
                                              origin: 'legacy', priority: 1)
         candidates.concat collect_candidates(glob: root.join(DEFAULT_SCHEMA, '*.sql'), schema: DEFAULT_SCHEMA,
@@ -47,7 +47,7 @@ module Arfi
       end
 
       def adapter_candidates(adapter_root, adapter)
-        candidates = []
+        candidates = [] # steep:ignore
         candidates.concat collect_candidates(glob: adapter_root.join('*.sql'), schema: DEFAULT_SCHEMA,
                                              source: adapter, origin: 'legacy', priority: 8)
         candidates.concat collect_candidates(glob: adapter_root.join(DEFAULT_SCHEMA, '*.sql'),

@@ -17,8 +17,9 @@ module Arfi
       end
 
       def validate_adapter_option!
-        return if adapter_opt.nil?
-        raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.include?(adapter_opt.to_sym)
+        opt = adapter_opt
+        return if opt.nil?
+        raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.map(&:to_s).include?(opt)
       end
 
       def parse_function_ref(ref)
@@ -30,7 +31,7 @@ module Arfi
         end
         check_schema_conflict!(parsed_schema)
         schema = schema_opt || parsed_schema
-        [schema, parsed_fn]
+        [schema, parsed_fn || '']
       end
 
       def validate_identifiers!(schema, function_name)
@@ -62,9 +63,8 @@ module Arfi
       end
 
       def resolve_adapter
-        adapter_opt || infer_adapter_from_config.tap do |a|
-          raise ArgumentError, 'Could not infer adapter. Pass --adapter=[postgresql|mysql|trilogy].' unless a
-        end
+        adapter_opt || infer_adapter_from_config || raise(ArgumentError,
+                                                          'Could not infer adapter. Pass --adapter=[postgresql|mysql|trilogy].')
       end
 
       def resolve_functions_for(adapter:)
@@ -98,7 +98,7 @@ module Arfi
           if ActiveRecord::Base.respond_to?(:configurations) && ActiveRecord::Base.configurations
             ActiveRecord::Base.configurations.configurations.select { _1.env_name == Rails.env }
           else
-            []
+            [] # steep:ignore
           end
         cfgs.find { _1.name == 'primary' } || cfgs.first
       end
