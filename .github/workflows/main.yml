@@ -55,7 +55,7 @@ jobs:
           bundler-cache: true
 
       - name: Check docs
-        run: bundle exec docscribe lib spec
+        run: bundle exec docscribe --rbs-collection lib spec
 
   test:
     name: Tests (matrix)
