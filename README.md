@@ -37,7 +37,7 @@ Demo project: https://github.com/unurgunite/poc_arfi_72
         * [Additional help](#additional-help)
     * [Demo](#demo)
     * [Library features](#library-features)
-    * [Roadmap](#roadmap)
+    * [TODO](#todo)
     * [Commands](#commands)
         * [Function creation](#function-creation-1)
         * [Function destroy](#function-destroy-1)
@@ -189,7 +189,7 @@ README is also available.
    | 7             | ✅      |
    | 6             | ✅      |
 
-## Roadmap
+## TODO
 
 1. Add `functions validate` / `functions doctor` command group (planned for 1.1.0);
 2. Add functions autoloader (v1.2.0);
