@@ -38,11 +38,7 @@ module ArfiSpec
         warn "[ARFI SPEC] MySQL unavailable (#{e.class}: #{e.message}). Skipping mysql specs."
         @available = false
       ensure
-        begin
-          MysqlProbeRecord.connection_pool.disconnect!
-        rescue StandardError
-          nil
-        end
+        safe_disconnect_probe!
       end
 
       # +ArfiSpec::MySQLDB#available?+ -> Object
@@ -80,41 +76,53 @@ module ArfiSpec
       def url
         mysql = ENV.fetch('ARFI_MYSQL_URL', nil)
         tri = ENV.fetch('ARFI_TRILOGY_URL', nil)
+        validate_url_exclusive!(mysql, tri)
+        return mysql if mysql&.length&.positive?
 
-        raise 'Set only one of ARFI_MYSQL_URL or ARFI_TRILOGY_URL' if mysql && !mysql.empty? && tri && !tri.empty?
+        tri if tri&.length&.positive?
+      end
 
-        return mysql if mysql && !mysql.empty?
-        return tri if tri && !tri.empty?
+      def validate_url_exclusive!(mysql, tri)
+        return unless mysql&.length&.positive? && tri&.length&.positive?
 
-        nil
+        raise 'Set only one of ARFI_MYSQL_URL or ARFI_TRILOGY_URL'
       end
 
       # +ArfiSpec::MySQLDB#reset!+ -> Object
       #
       # Reset the current MySQL database schema for test isolation.
       #
-      # Drops:
-      # - all functions in the current database
-      # - all tables in the current database
+      # Drops all functions and all tables in the current database.
       #
       # @private
       # @return [void]
       def reset!
         conn = ActiveRecord::Base.connection
+        drop_all_functions(conn)
+        drop_all_tables(conn)
+      end
 
+      def drop_all_functions(conn)
         routines = conn.exec_query(<<~SQL).rows.flatten
           SELECT ROUTINE_NAME
           FROM information_schema.ROUTINES
           WHERE ROUTINE_TYPE = 'FUNCTION'
             AND ROUTINE_SCHEMA = DATABASE()
         SQL
-
         routines.each { |fn| conn.execute("DROP FUNCTION IF EXISTS `#{fn}`") }
+      end
 
+      def drop_all_tables(conn)
         conn.execute('SET FOREIGN_KEY_CHECKS = 0')
         tables = conn.exec_query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'").rows.map(&:first)
         tables.each { |t| conn.execute("DROP TABLE IF EXISTS `#{t}`") }
         conn.execute('SET FOREIGN_KEY_CHECKS = 1')
+      end
+
+      def safe_disconnect_probe!
+        MysqlProbeRecord.connection_pool.disconnect!
+      rescue StandardError
+        nil
       end
 
       # +ArfiSpec::MySQLDB#disconnect!+ -> Object

@@ -17,25 +17,35 @@ module ActiveRecord
     def self.function_exists?(function_name)
       case connection.class.name
       when 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
-        sql = "SELECT 1 FROM pg_proc WHERE proname = #{connection.quote(function_name)} LIMIT 1"
-        !connection.select_value(sql).nil?
+        pg_function_exists?(function_name)
       when 'ActiveRecord::ConnectionAdapters::Mysql2Adapter', 'ActiveRecord::ConnectionAdapters::TrilogyAdapter'
-        schema = connection.quote(connection.current_database)
-        name   = connection.quote(function_name)
-
-        sql = <<~SQL
-          SELECT 1
-          FROM information_schema.ROUTINES
-          WHERE ROUTINE_TYPE = 'FUNCTION'
-            AND ROUTINE_SCHEMA = #{schema}
-            AND ROUTINE_NAME = #{name}
-          LIMIT 1;
-        SQL
-
-        !connection.select_value(sql).nil?
+        mysql_function_exists?(function_name)
       else
         raise ActiveRecord::AdapterNotFound, "adapter #{connection.class.name} is not supported"
       end
+    end
+
+    # Method documentation.
+    #
+    # @param [String] function_name Param documentation.
+    # @return [Boolean]
+    def self.pg_function_exists?(function_name)
+      sql = "SELECT 1 FROM pg_proc WHERE proname = #{connection.quote(function_name)} LIMIT 1"
+      !connection.select_value(sql).nil?
+    end
+
+    # Method documentation.
+    #
+    # @param [String] function_name Param documentation.
+    # @return [Boolean]
+    def self.mysql_function_exists?(function_name)
+      !connection.select_value(<<~SQL).nil?
+        SELECT 1 FROM information_schema.ROUTINES
+        WHERE ROUTINE_TYPE = 'FUNCTION'
+          AND ROUTINE_SCHEMA = #{connection.quote(connection.current_database)}
+          AND ROUTINE_NAME = #{connection.quote(function_name)}
+        LIMIT 1;
+      SQL
     end
   end
 end

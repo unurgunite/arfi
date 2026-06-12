@@ -1,58 +1,50 @@
 module Arfi
-  # Loads user-defined SQL functions into the database.
-  #
-  # Supported directory layout (Option B: explicit public):
-  #
-  #   db/functions/public/*.sql                       (generic public)
-  #   db/functions/postgresql/public/*.sql            (postgres public)
-  #   db/functions/postgresql/<schema>/*.sql          (postgres schema)
-  #
-  # Backward-compatible legacy aliases:
-  #
-  #   db/functions/*.sql                              (generic public legacy)
-  #   db/functions/postgresql/*.sql                   (postgres public legacy)
-  #
-  # Rules:
-  # - underscore-prefixed files are ignored (_shared.sql)
-  # - adapter-specific overrides generic when schema+filename matches
+  type sql_file_item = {
+    schema: String,
+    base: String,
+    path: String,
+    priority: Integer
+  }
+
   class SqlFunctionLoader
-    # @param task_name [String|nil] name of rake task (used only for behavior selection / logging)
-    # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter|nil] When provided, loader uses THIS
-    #  connection (important for runtime retry paths).
-    # @param clear_active_connections [Boolean]
-    # @param verbose [Boolean]
     def self.load!: (?task_name: String?, ?connection: ::ActiveRecord::ConnectionAdapters::AbstractAdapter?, ?clear_active_connections: bool, ?verbose: bool) -> void
 
     private
 
-    def self.raise_unless_supported_adapter: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> untyped
+    def self.default_connection: () -> ::ActiveRecord::ConnectionAdapters::AbstractAdapter
 
-    def self.multi_db?: () -> untyped
+    def self.raise_unless_supported_adapter: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> void
 
-    def self.populate_multiple_db: (verbose: untyped) -> untyped
+    def self.multi_db?: () -> bool
 
-    def self.populate_db: (untyped conn, verbose: untyped, task_name: untyped) -> (untyped)
+    def self.populate_multiple_db: (verbose: bool) -> void
 
-    def self.safe_db_env: (untyped conn) -> untyped
+    def self.populate_db: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, verbose: bool, task_name: String?) -> void
 
-    def self.safe_db_name: (untyped conn) -> untyped
+    def self.clear_active_connections_if_needed: (bool clear) -> void
 
-    def self.log: (untyped _conn, untyped msg) -> untyped
+    def self.load_sql_file: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Pathname | String file, bool verbose, String? task_name) -> void
 
-    # Priority (higher wins):
-    #  10: adapter explicit schema dir (postgresql/<schema>/fn.sql)
-    #   9: adapter explicit public dir (postgresql/public/fn.sql)
-    #   8: adapter legacy public       (postgresql/fn.sql)
-    #   2: generic explicit public     (public/fn.sql)
-    #   1: generic legacy public       (fn.sql)
-    def self.sql_files: (untyped conn) -> (::Array[untyped] | untyped)
+    def self.log_sql_load: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Pathname | String file, String? task_name) -> void
 
-    def self.collect_sql: (glob: untyped, schema: untyped, priority: untyped) -> untyped
+    def self.safe_db_env: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> String
 
-    def self.finalize_items: (untyped items) -> untyped
+    def self.safe_db_name: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> String
 
-    def self.adapter_root_for: (untyped conn, untyped root) -> untyped
+    def self.log: (::ActiveRecord::ConnectionAdapters::AbstractAdapter _conn, String msg) -> void
 
-    def self.default_connection: () -> untyped
+    def self.sql_files: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> Array[String]
+
+    def self.collect_adapter_sql_files: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Pathname adapter_root) -> Array[sql_file_item]
+
+    def self.collect_postgresql_sql_files: (::Pathname adapter_root) -> Array[sql_file_item]
+
+    def self.collect_adapter_public_sql_files: (::Pathname adapter_root) -> Array[sql_file_item]
+
+    def self.collect_sql: (glob: ::Pathname | String, schema: String, priority: Integer) -> Array[sql_file_item]
+
+    def self.finalize_items: (Array[sql_file_item] items) -> Array[String]
+
+    def self.adapter_root_for: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Pathname root) -> ::Pathname
   end
 end

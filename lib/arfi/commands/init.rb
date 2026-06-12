@@ -37,25 +37,8 @@ module Arfi
       # @return [void]
       def create
         validate_schema_format!
-
-        root = Rails.root.join(ROOT_DIR)
-        FileUtils.mkdir_p(root)
-        puts "Ensured: #{root}"
-
-        FileUtils.mkdir_p(root.join(DEFAULT_SCHEMA))
-        puts "Ensured: #{root.join(DEFAULT_SCHEMA)}"
-
-        return unless options[:adapter] # steep:ignore NoMethod
-
-        adapter = options[:adapter].to_s # steep:ignore NoMethod
-        raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.include?(adapter.to_sym)
-
-        adapter_root = root.join(adapter)
-        FileUtils.mkdir_p(adapter_root)
-        puts "Ensured: #{adapter_root}"
-
-        FileUtils.mkdir_p(adapter_root.join(DEFAULT_SCHEMA))
-        puts "Ensured: #{adapter_root.join(DEFAULT_SCHEMA)}"
+        create_base_dirs
+        create_adapter_dirs if options[:adapter] # steep:ignore NoMethod
       end
 
       private
@@ -76,6 +59,35 @@ module Arfi
           end
 
         raise Arfi::Errors::InvalidSchemaFormat unless fmt == :ruby
+      end
+
+      # Method documentation.
+      #
+      # @private
+      # @return [void]
+      def create_base_dirs
+        root = Rails.root.join(ROOT_DIR)
+        FileUtils.mkdir_p(root)
+        puts "Ensured: #{root}"
+        FileUtils.mkdir_p(root.join(DEFAULT_SCHEMA))
+        puts "Ensured: #{root.join(DEFAULT_SCHEMA)}"
+      end
+
+      # Method documentation.
+      #
+      # @private
+      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @return [void]
+      def create_adapter_dirs
+        adapter = options[:adapter].to_s # steep:ignore NoMethod
+        raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.include?(adapter.to_sym)
+
+        root = Rails.root.join(ROOT_DIR)
+        adapter_root = root.join(adapter)
+        FileUtils.mkdir_p(adapter_root)
+        puts "Ensured: #{adapter_root}"
+        FileUtils.mkdir_p(adapter_root.join(DEFAULT_SCHEMA))
+        puts "Ensured: #{adapter_root.join(DEFAULT_SCHEMA)}"
       end
     end
   end

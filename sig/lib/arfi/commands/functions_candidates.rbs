@@ -1,0 +1,25 @@
+module Arfi
+  module Commands
+    module FunctionsCandidates : Arfi::Commands::Functions
+      DEFAULT_SCHEMA: "public"
+
+      private
+
+      def collect_all_candidates: (::Pathname root, String adapter) -> Array[candidate]
+
+      def group_candidates_by_key: (Array[candidate] candidates) -> ::Hash[String, Array[candidate]]
+
+      def build_resolved_rows: (::Hash[String, Array[candidate]] by_key) -> Array[::Hash[Symbol, untyped]]
+
+      def generic_candidates: (::Pathname root) -> Array[candidate]
+
+      def adapter_candidates: (::Pathname adapter_root, String adapter) -> Array[candidate]
+
+      def collect_postgresql_schema_candidates: (::Pathname adapter_root, String adapter) -> Array[candidate]
+
+      def collect_candidates: (glob: ::Pathname, schema: String, source: String, origin: String, priority: Integer) -> Array[candidate]
+
+      def rel: (::Pathname | String path) -> String
+    end
+  end
+end

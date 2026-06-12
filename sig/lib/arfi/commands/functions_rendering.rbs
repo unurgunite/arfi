@@ -1,0 +1,25 @@
+module Arfi
+  module Commands
+    module FunctionsRendering : Arfi::Commands::Functions
+      private
+
+      def print_table: (Array[::Hash[Symbol, untyped]] rows) -> void
+
+      def render_list: (Array[::Hash[Symbol, untyped]] rows) -> void
+
+      def table_columns: () -> Array[String]
+
+      def stringify_rows: (Array[::Hash[Symbol, untyped]] rows) -> Array[::Hash[Symbol, untyped]]
+
+      def calculate_widths: (Array[String] cols, Array[::Hash[Symbol, untyped]] table) -> ::Hash[String, Integer]
+
+      def render_table_rows: (Array[::Hash[Symbol, untyped]] table, Array[String] cols, ::Hash[String, Integer] widths) -> void
+
+      def resolve_key_group: (Array[candidate] arr) -> Array[::Hash[Symbol, untyped]]
+
+      def all_mode_rows: (Array[candidate] arr, candidate chosen) -> Array[::Hash[Symbol, untyped]]
+
+      def default_mode_row: (candidate chosen, Array[candidate] arr) -> Array[::Hash[Symbol, untyped]]
+    end
+  end
+end
