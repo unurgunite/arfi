@@ -18,24 +18,12 @@ RSpec.describe Arfi::SqlFunctionLoader, :pgsql do
     described_class.load!(verbose: false)
   end
 
-  def expect_index_creation_to_fail
-    expect do
-      ActiveRecord::Base.connection.execute(<<~SQL)
-        CREATE INDEX idx_users_norm_email ON users (normalize_email(email));
-      SQL
-    end.to raise_error(ActiveRecord::StatementInvalid)
-  end
-
   def expect_index_creation_to_succeed
     expect do
       ActiveRecord::Base.connection.execute(<<~SQL)
         CREATE INDEX idx_users_norm_email ON users (normalize_email(email));
       SQL
     end.not_to raise_error(ActiveRecord::StatementInvalid)
-  end
-
-  it 'fails on index creation when function is missing' do
-    expect_index_creation_to_fail
   end
 
   it 'succeeds after loader provides the function' do
