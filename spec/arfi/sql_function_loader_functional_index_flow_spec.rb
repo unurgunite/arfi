@@ -26,6 +26,10 @@ RSpec.describe Arfi::SqlFunctionLoader, :pgsql do
     end.not_to raise_error(ActiveRecord::StatementInvalid)
   end
 
+  it 'succeeds via auto-reload when function is ARFI-managed' do
+    expect_index_creation_to_succeed
+  end
+
   it 'succeeds after loader provides the function' do
     load!
     expect_index_creation_to_succeed
