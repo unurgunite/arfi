@@ -33,8 +33,8 @@ RSpec.describe Arfi::SqlFunctionLoader do
     end
 
     %w[db:migrate db:schema:load db:setup db:prepare db:test:prepare].each do |task|
-      it "enhances #{task} with #{enhancer}" do
-        expect(Rake::Task[task].prerequisites).to include(enhancer)
+      it "enhances #{task} with _db:arfi_enhance" do
+        expect(Rake::Task[task].prerequisites).to include('_db:arfi_enhance')
       end
     end
   end
@@ -69,7 +69,9 @@ RSpec.describe Arfi::SqlFunctionLoader do
 
     it 'calls SqlFunctionLoader with task_name' do
       Rake::Task['_db:arfi_enhance:db:migrate:animals'].invoke
-      expect(described_class).to have_received(:load!).with(task_name: 'db:migrate:animals', verbose: true)
+      expect(described_class).to have_received(:load!).with(
+        task_name: 'db:migrate:animals', connection: anything, verbose: true
+      )
     end
   end
 end
