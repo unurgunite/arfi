@@ -39,7 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rails', '>= 6.0'
   spec.add_dependency 'rake', '>= 12.0'
   spec.add_dependency 'thor', '~> 1.3'
-  spec.add_development_dependency 'docscribe'
+  spec.add_development_dependency 'docscribe', '~> 1.4'
   spec.add_development_dependency 'dotenv'
   spec.add_development_dependency 'irb', '>= 1.15'
   spec.add_development_dependency 'mysql2'
