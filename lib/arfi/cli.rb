@@ -28,11 +28,9 @@ module Arfi
     subcommand 'f_idx', Arfi::Commands::Functions
 
     desc 'version', 'Print the version'
-    # +Arfi::CLI#version+ -> Object
+    # Print the gem version to stdout.
     #
-    # Print the ARFI gem version to stdout.
-    #
-    # @return [void]
+    # @return [Integer]
     def version
       $stdout.write(Arfi::VERSION, "\n")
     end

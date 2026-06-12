@@ -4,16 +4,11 @@ require 'active_record'
 
 module ActiveRecord
   class Base # :nodoc:
-    # +ActiveRecord::Base.function_exists?+               -> bool
+    # Check if a SQL function exists in the database, dispatching to the correct adapter method.
     #
-    # This method checks if a custom SQL function exists in the database.
-    #
-    # @example
-    #   ActiveRecord::Base.function_exists?('my_function') #=> true
-    #   ActiveRecord::Base.function_exists?('my_function123') #=> false
-    # @param [String] function_name The name of the function to check.
-    # @raise [ActiveRecord::AdapterNotFound]
-    # @return [Boolean] Returns true if the function exists, false otherwise.
+    # @param [String] function_name Function name to check
+    # @raise [ActiveRecord::AdapterNotFound] If adapter is not supported
+    # @return [Boolean] Whether the function exists
     def self.function_exists?(function_name)
       case connection.class.name
       when 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
@@ -25,19 +20,19 @@ module ActiveRecord
       end
     end
 
-    # Method documentation.
+    # Check if a function exists in PostgreSQL via pg_proc catalog table.
     #
-    # @param [String] function_name Param documentation.
-    # @return [Boolean]
+    # @param [String] function_name Function name to check
+    # @return [Boolean] Whether the function exists
     def self.pg_function_exists?(function_name)
       sql = "SELECT 1 FROM pg_proc WHERE proname = #{connection.quote(function_name)} LIMIT 1"
       !connection.select_value(sql).nil?
     end
 
-    # Method documentation.
+    # Check if a function exists in MySQL/MariaDB via information_schema.ROUTINES.
     #
-    # @param [String] function_name Param documentation.
-    # @return [Boolean]
+    # @param [String] function_name Function name to check
+    # @return [Boolean] Whether the function exists
     def self.mysql_function_exists?(function_name)
       !connection.select_value(<<~SQL).nil?
         SELECT 1 FROM information_schema.ROUTINES

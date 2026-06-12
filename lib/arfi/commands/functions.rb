@@ -52,8 +52,9 @@ module Arfi
       option :force, type: :boolean, default: false,
                      desc: 'Overwrite existing function file if it already exists.'
       # steep:ignore:end
-      # +Arfi::Commands::Functions#create+ -> void
-      # @param [String] function_ref Param documentation.
+      # Create (or overwrite with --force) a SQL function file in the appropriate directory.
+      #
+      # @param [String] function_ref Function reference string (e.g. 'my_func' or 'schema.my_func')
       # @return [void]
       def create(function_ref)
         validate_schema_format!
@@ -79,8 +80,9 @@ module Arfi
                        desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
                        banner: 'adapter'
       # steep:ignore:end
-      # +Arfi::Commands::Functions#destroy+ -> void
-      # @param [String] function_ref Param documentation.
+      # Delete a SQL function file from disk (supports both new and legacy locations).
+      #
+      # @param [String] function_ref Function reference string (e.g. 'my_func' or 'schema.my_func')
       # @return [void]
       def destroy(function_ref)
         validate_schema_format!
@@ -109,7 +111,8 @@ module Arfi
       option :all, type: :boolean, default: false,
                    desc: 'Show all candidates (including overridden ones), not just the effective set.'
       # steep:ignore:end
-      # +Arfi::Commands::Functions#list+ -> void
+      # List SQL function files ARFI would load for the chosen adapter.
+      #
       # @return [void]
       def list
         validate_schema_format!
