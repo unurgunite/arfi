@@ -48,6 +48,7 @@ Demo project: https://github.com/unurgunite/poc_arfi_72
                 * [`--force` option](#--force-option)
     * [Limitations](#limitations)
     * [Development](#development)
+        * [Run tests locally](#run-tests-locally)
         * [Build from source](#build-from-source)
     * [Requirements](#requirements)
     * [Contributing](#contributing)
@@ -282,7 +283,7 @@ template, but with a user-defined one. There are some rules for templates:
    SQL
    ```
 
-3. By default ARFI uses PostgreSQL template.
+3. By default, ARFI uses PostgreSQL template.
 
 ##### `--adapter` option
 
@@ -311,6 +312,36 @@ Overwrite existing function file if it already exists.
   accordingly.
 
 ## Development
+
+### Run tests locally
+
+Start the required databases via Docker Compose:
+
+```shell
+docker compose up -d
+```
+
+Wait for both services to become healthy (check with `docker ps`). Then run the test suite:
+
+```shell
+bundle exec rspec
+```
+
+The test suite automatically detects available databases via environment variables:
+
+| Variable            | Default value                                             |
+|---------------------|-----------------------------------------------------------|
+| `ARFI_POSTGRES_URL` | `postgresql://postgres:postgres@localhost:5432/arfi_test` |
+| `ARFI_MYSQL_URL`    | `mysql2://root:password@127.0.0.1:3306/arfi_test`         |
+
+Specs tagged with `:pgsql` or `:mysql` only run when the corresponding database is reachable;
+untagged specs run with no external dependencies.
+
+To stop the containers when done:
+
+```shell
+docker compose down
+```
 
 ### Build from source
 
