@@ -6,10 +6,10 @@ module Arfi
     module FunctionsHelpers
       private
 
-      # Method documentation.
+      # Validate that the Rails schema format is set to :ruby.
       #
       # @private
-      # @raise [Arfi::Errors::InvalidSchemaFormat]
+      # @raise [Arfi::Errors::InvalidSchemaFormat] If schema format is not :ruby
       # @return [void]
       def validate_schema_format!
         fmt =
@@ -21,10 +21,10 @@ module Arfi
         raise Arfi::Errors::InvalidSchemaFormat unless fmt == :ruby
       end
 
-      # Method documentation.
+      # Validate that the --adapter option, if provided, is one of the supported adapters.
       #
       # @private
-      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @raise [Arfi::Errors::AdapterNotSupported] If adapter is not in the supported list
       # @return [void]
       def validate_adapter_option!
         opt = adapter_opt
@@ -32,11 +32,13 @@ module Arfi
         raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.map(&:to_s).include?(opt)
       end
 
-      # Method documentation.
+      # Parse a function reference into an optional schema and function name.
+      #
+      # Accepts 'schema.function_name' or just 'function_name' form.
       #
       # @private
-      # @param [String] ref Param documentation.
-      # @return [[ ::String?, ::String ]]
+      # @param [String] ref Function reference string
+      # @return [[ ::String?, ::String ]] Array of [schema, function_name]
       def parse_function_ref(ref)
         validate_function_ref!(ref)
         parsed_schema, parsed_fn = ref.split('.', 2)
@@ -49,12 +51,14 @@ module Arfi
         [schema, parsed_fn || '']
       end
 
-      # Method documentation.
+      # Validate that schema and function name match the allowed identifier pattern.
+      #
+      # Schema-qualified functions are only allowed for PostgreSQL adapter.
       #
       # @private
-      # @param [String?] schema Param documentation.
-      # @param [String] function_name Param documentation.
-      # @raise [ArgumentError]
+      # @param [String?] schema Schema name to validate (optional)
+      # @param [String] function_name Function name to validate
+      # @raise [ArgumentError] If identifiers are invalid
       # @return [void]
       def validate_identifiers!(schema, function_name)
         raise ArgumentError, "Invalid function name: #{function_name.inspect}" unless IDENT.match?(function_name)
@@ -65,11 +69,11 @@ module Arfi
         raise ArgumentError, 'Schema-qualified functions are only supported for PostgreSQL (adapter=postgresql).'
       end
 
-      # Method documentation.
+      # Validate that a function reference is a non-empty string without path separators.
       #
       # @private
-      # @param [String] ref Param documentation.
-      # @raise [ArgumentError]
+      # @param [String] ref Function reference string
+      # @raise [ArgumentError] If reference is invalid
       # @return [void]
       def validate_function_ref!(ref)
         raise ArgumentError, "Invalid function name: #{ref.inspect}" unless ref.is_a?(String)
@@ -79,11 +83,11 @@ module Arfi
         raise ArgumentError, "Invalid function name: #{ref.inspect}" if bad
       end
 
-      # Method documentation.
+      # Raise if the schema is specified both inline and via the --schema option.
       #
       # @private
-      # @param [String?] parsed_schema Param documentation.
-      # @raise [ArgumentError]
+      # @param [String?] parsed_schema Schema parsed from 'schema.function' form
+      # @raise [ArgumentError] If schema is specified twice
       # @return [void]
       def check_schema_conflict!(parsed_schema)
         return unless schema_opt && parsed_schema
@@ -91,21 +95,21 @@ module Arfi
         raise ArgumentError, "Schema specified twice (both 'schema.fn' and --schema). Pick one."
       end
 
-      # Method documentation.
+      # Resolve the effective schema name, defaulting to 'public' for PostgreSQL/generic.
       #
       # @private
-      # @param [String?] schema Param documentation.
-      # @return [String?]
+      # @param [String?] schema User-provided schema name (optional)
+      # @return [String?] Resolved schema name or nil for MySQL/Trilogy
       def resolve_schema_name(schema)
         adapter = adapter_opt
         adapter.nil? || adapter == 'postgresql' ? (schema || DEFAULT_SCHEMA) : nil
       end
 
-      # Method documentation.
+      # Resolve the effective adapter from CLI option or Rails DB config.
       #
       # @private
-      # @raise [ArgumentError]
-      # @return [String]
+      # @raise [ArgumentError] If adapter cannot be inferred
+      # @return [String] Resolved adapter name
       def resolve_adapter
         adapter_opt || infer_adapter_from_config || raise(
           ArgumentError,
@@ -113,12 +117,12 @@ module Arfi
         )
       end
 
-      # Method documentation.
+      # Resolve the effective list of function files for a given adapter.
       #
       # @private
-      # @param [String] adapter Param documentation.
-      # @raise [Arfi::Errors::NoFunctionsDir]
-      # @return [Array<Hash<Symbol, Object>>]
+      # @param [String] adapter Adapter name (postgresql, mysql, trilogy)
+      # @raise [Arfi::Errors::NoFunctionsDir] If db/functions directory doesn't exist
+      # @return [Array<Hash<Symbol, Object>>] Resolved function rows
       def resolve_functions_for(adapter:)
         root = Rails.root.join(ROOT_DIR)
         raise Arfi::Errors::NoFunctionsDir unless root.directory?
@@ -128,19 +132,19 @@ module Arfi
         build_resolved_rows(by_key)
       end
 
-      # Method documentation.
+      # Read the --adapter option value from CLI options.
       #
       # @private
-      # @return [String?]
+      # @return [String?] Adapter name or nil if not provided
       def adapter_opt
         options[:adapter]&.to_s
       end
 
-      # Method documentation.
+      # Infer the database adapter from the Rails primary DB configuration.
       #
       # @private
       # @raise [StandardError]
-      # @return [String?]
+      # @return [String?] Adapter name, or nil if inference fails
       # @return [nil] if StandardError
       def infer_adapter_from_config
         cfg = primary_db_config
@@ -151,18 +155,18 @@ module Arfi
         nil
       end
 
-      # Method documentation.
+      # Read the --schema option value from CLI options.
       #
       # @private
-      # @return [String?]
+      # @return [String?] Schema name or nil if not provided
       def schema_opt
         options[:schema]&.to_s
       end
 
-      # Method documentation.
+      # Get the primary database configuration for the current Rails environment.
       #
       # @private
-      # @return [Object]
+      # @return [Object] ActiveRecord database config object
       def primary_db_config
         cfgs =
           if ActiveRecord::Base.respond_to?(:configurations) && ActiveRecord::Base.configurations

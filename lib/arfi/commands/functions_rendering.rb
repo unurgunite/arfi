@@ -6,10 +6,10 @@ module Arfi
     module FunctionsRendering
       private
 
-      # Method documentation.
+      # Render the resolved function list in the selected format (paths, json, or table).
       #
       # @private
-      # @param [Array<Hash<Symbol, Object>>] rows Param documentation.
+      # @param [Array<Hash<Symbol, Object>>] rows Resolved function rows
       # @return [void]
       def render_list(rows)
         case options[:format].to_s
@@ -22,10 +22,10 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Print the function list as a formatted ASCII table.
       #
       # @private
-      # @param [Array<Hash<Symbol, Object>>] rows Param documentation.
+      # @param [Array<Hash<Symbol, Object>>] rows Resolved function rows
       # @return [void]
       def print_table(rows)
         cols = table_columns
@@ -36,10 +36,10 @@ module Arfi
         render_table_rows(table, cols, widths)
       end
 
-      # Method documentation.
+      # Determine which columns to display based on the --all flag.
       #
       # @private
-      # @return [Array<String>]
+      # @return [Array<String>] List of column names
       def table_columns
         if options[:all]
           %w[chosen schema function source origin priority path shadowed_by]
@@ -48,11 +48,11 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Convert all row values to strings for display, handling special columns.
       #
       # @private
-      # @param [Array<Hash<Symbol, Object>>] rows Param documentation.
-      # @return [Array<Hash<Symbol, Object>>]
+      # @param [Array<Hash<Symbol, Object>>] rows Resolved function rows
+      # @return [Array<Hash<Symbol, Object>>] Rows with string values
       def stringify_rows(rows)
         rows.map do |r|
           r = r.dup
@@ -63,12 +63,12 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Calculate the maximum display width for each column.
       #
       # @private
-      # @param [Array<String>] cols Param documentation.
-      # @param [Array<Hash<Symbol, Object>>] table Param documentation.
-      # @return [Hash<String, Integer>]
+      # @param [Array<String>] cols Column names
+      # @param [Array<Hash<Symbol, Object>>] table Stringified table rows
+      # @return [Hash<String, Integer>] Column widths keyed by column name
       def calculate_widths(cols, table)
         widths = {} # steep:ignore
         cols.each do |c|
@@ -77,12 +77,12 @@ module Arfi
         widths
       end
 
-      # Method documentation.
+      # Render each table row with proper column alignment.
       #
       # @private
-      # @param [Array<Hash<Symbol, Object>>] table Param documentation.
-      # @param [Array<String>] cols Param documentation.
-      # @param [Hash<String, Integer>] widths Param documentation.
+      # @param [Array<Hash<Symbol, Object>>] table Stringified table rows
+      # @param [Array<String>] cols Column names
+      # @param [Hash<String, Integer>] widths Calculated column widths
       # @return [void]
       def render_table_rows(table, cols, widths)
         table.each do |r|
@@ -90,11 +90,11 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Resolve a group of same-key candidates to the chosen one with shadowed info.
       #
       # @private
-      # @param [Array<Arfi::Commands::candidate>] arr Param documentation.
-      # @return [Array<Hash<Symbol, Object>>]
+      # @param [Array<Arfi::Commands::candidate>] arr Candidates for one function key
+      # @return [Array<Hash<Symbol, Object>>] Resolved row(s) for display
       def resolve_key_group(arr)
         chosen = arr.max_by { |c| c[:priority] }
         return [] unless chosen
@@ -106,12 +106,12 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Build display rows for --all mode (shows all candidates including overridden ones).
       #
       # @private
-      # @param [Array<Arfi::Commands::candidate>] arr Param documentation.
-      # @param [Arfi::Commands::candidate] chosen Param documentation.
-      # @return [Array<Hash<Symbol, Object>>]
+      # @param [Array<Arfi::Commands::candidate>] arr All candidates for one function key
+      # @param [Arfi::Commands::candidate] chosen The selected (highest-priority) candidate
+      # @return [Array<Hash<Symbol, Object>>] Display rows
       def all_mode_rows(arr, chosen)
         chosen_path = chosen[:path]
         arr.sort_by { |c| [-c[:priority], c[:schema], c[:function]] }.map do |c|
@@ -122,12 +122,12 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Build a single display row for default mode (only the chosen candidate).
       #
       # @private
-      # @param [Arfi::Commands::candidate] chosen Param documentation.
-      # @param [Array<Arfi::Commands::candidate>] arr Param documentation.
-      # @return [Array<Hash<Symbol, Object>>]
+      # @param [Arfi::Commands::candidate] chosen The selected (highest-priority) candidate
+      # @param [Array<Arfi::Commands::candidate>] arr All candidates for one function key
+      # @return [Array<Hash<Symbol, Object>>] Single display row
       def default_mode_row(chosen, arr)
         shadowed = (arr - [chosen])
         [chosen.merge(chosen: true, shadowed: shadowed.map { rel(_1[:path]) })]

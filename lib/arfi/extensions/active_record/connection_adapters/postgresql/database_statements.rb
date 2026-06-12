@@ -24,14 +24,13 @@ module Arfi
 
       THREAD_GUARD_KEY = :arfi_reloading_functions
 
-      # +Arfi::PostgreSQL::DatabaseStatementsPatch#exec_query+ -> Object
+      # Execute a SQL query, reloading missing ARFI-managed functions and retrying on PG::UndefinedFunction.
       #
-      # Wrap ActiveRecord exec_query to support "reload functions and retry" behavior.
-      #
-      # @param [Array<Object>] args Positional arguments forwarded to the original method.
-      # @param [Hash] kwargs Keyword arguments forwarded to the original method.
-      # @raise [StandardError] re-raised after retry if the function is not ARFI-managed.
-      # @return [Object] query result from the original method.
+      # @param [Array<Object>] args Positional arguments forwarded to the original exec_query
+      # @param [Object] kwargs Keyword arguments forwarded to the original exec_query
+      # @raise [StandardError] If the error is not recoverable
+      # @return [Object] Query result
+      # @return [Object] if StandardError (retry successful)
       def exec_query(*args, **kwargs)
         super
       rescue StandardError => e
@@ -39,14 +38,13 @@ module Arfi
         retry
       end
 
-      # +Arfi::PostgreSQL::DatabaseStatementsPatch#execute+ -> Object
+      # Execute raw SQL, reloading missing ARFI-managed functions and retrying on PG::UndefinedFunction.
       #
-      # Wrap ActiveRecord execute (DDL path) to support "reload functions and retry" behavior.
-      #
-      # @param [Array<Object>] args Positional arguments forwarded to the original method.
-      # @param [Hash] kwargs Keyword arguments forwarded to the original method.
-      # @raise [StandardError] re-raised after retry if the function is not ARFI-managed.
-      # @return [Object] query result from the original method.
+      # @param [Array<Object>] args Positional arguments forwarded to the original execute
+      # @param [Object] kwargs Keyword arguments forwarded to the original execute
+      # @raise [StandardError] If the error is not recoverable
+      # @return [Object] Execution result
+      # @return [Object] if StandardError (retry successful)
       def execute(*args, **kwargs)
         super
       rescue StandardError => e
@@ -54,14 +52,13 @@ module Arfi
         retry
       end
 
-      # +Arfi::PostgreSQL::DatabaseStatementsPatch#raw_execute+ -> Object
+      # Execute a raw SQL statement, reloading missing ARFI-managed functions and retrying on PG::UndefinedFunction.
       #
-      # Wrap ActiveRecord raw_execute (Rails 7+/8 path) to support "reload functions and retry" behavior.
-      #
-      # @param [Array<Object>] args Positional arguments forwarded to the original method.
-      # @param [Hash] kwargs Keyword arguments forwarded to the original method.
-      # @raise [StandardError] re-raised after retry if the function is not ARFI-managed.
-      # @return [Object] query result from the original method.
+      # @param [Array<Object>] args Positional arguments forwarded to the original raw_execute
+      # @param [Object] kwargs Keyword arguments forwarded to the original raw_execute
+      # @raise [StandardError] If the error is not recoverable
+      # @return [Object] Execution result
+      # @return [Object] if StandardError (retry successful)
       def raw_execute(*args, **kwargs)
         super
       rescue StandardError => e
@@ -69,14 +66,13 @@ module Arfi
         retry
       end
 
-      # +Arfi::PostgreSQL::DatabaseStatementsPatch#internal_exec_query+ -> Object
+      # Execute an internal query, reloading missing ARFI-managed functions and retrying on PG::UndefinedFunction.
       #
-      # Wrap ActiveRecord internal_exec_query (Rails 7.1+ commonly uses this for SELECT paths).
-      #
-      # @param [Array<Object>] args Positional arguments forwarded to the original method.
-      # @param [Hash] kwargs Keyword arguments forwarded to the original method.
-      # @raise [StandardError] re-raised after retry if the function is not ARFI-managed.
-      # @return [Object] query result from the original method.
+      # @param [Array<Object>] args Positional arguments forwarded to the original internal_exec_query
+      # @param [Object] kwargs Keyword arguments forwarded to the original internal_exec_query
+      # @raise [StandardError] If the error is not recoverable
+      # @return [Object] Query result
+      # @return [Object] if StandardError (retry successful)
       def internal_exec_query(*args, **kwargs)
         super
       rescue StandardError => e
@@ -86,13 +82,13 @@ module Arfi
 
       private
 
-      # +Arfi::PostgreSQL::DatabaseStatementsPatch#arfi_try_reload_and_retry?+ -> Object
+      # Check if the error is caused by a missing ARFI-managed function and attempt to reload it.
       #
-      # Attempt to reload SQL functions and allow retry when an ARFI-managed function is missing.
+      # Uses a thread guard to prevent recursive retries.
       #
       # @private
-      # @param [StandardError] e The exception raised by the query.
-      # @return [Boolean] +true+ if functions were reloaded and retry should happen.
+      # @param [Object] e The raised exception (StandardError with possible PG::UndefinedFunction cause)
+      # @return [Boolean] Whether the error was handled (reload attempted)
       def arfi_try_reload_and_retry?(e)
         pg_error = e.cause || e
         return false unless pg_error.class.name == "PG::UndefinedFunction"
@@ -116,13 +112,11 @@ module Arfi
         true
       end
 
-      # +Arfi::PostgreSQL::DatabaseStatementsPatch#arfi_extract_function_ident+ -> Object
-      #
-      # Parse a PostgreSQL undefined-function error message and return [schema, function_name].
+      # Extract the schema and function name from a PG::UndefinedFunction error message.
       #
       # @private
-      # @param [String] message The error message from +PG::UndefinedFunction+.
-      # @return [Array<(String, String)>] two-element array of [schema, function_name].
+      # @param [Object] message The error message string
+      # @return [Array<nil>, Object] Array of [schema, function_name] or [nil, nil] if not matched
       def arfi_extract_function_ident(message)
         m = message.to_s.match(ARFI_UNDEFINED_FUNCTION)
         return [nil, nil] unless m
@@ -132,14 +126,12 @@ module Arfi
         parts.length == 2 ? [parts[0], parts[1]] : [nil, parts[0]]
       end
 
-      # +Arfi::PostgreSQL::DatabaseStatementsPatch#arfi_has_function_file_for?+ -> Object
-      #
-      # Check whether a missing function is managed by ARFI (exists as a file under db/functions).
+      # Check whether a function file exists under db/functions for the given schema and function name.
       #
       # @private
-      # @param [String, nil] schema Schema name or +nil+.
-      # @param [String] fn Function name.
-      # @return [Boolean] +true+ if a matching function file exists under +db/functions+.
+      # @param [Object] schema Schema name (possibly nil)
+      # @param [Object] fn Function name
+      # @return [Boolean, Object] Whether a matching file exists on disk
       def arfi_has_function_file_for?(schema, fn)
         return false if fn.nil? || fn.empty?
 

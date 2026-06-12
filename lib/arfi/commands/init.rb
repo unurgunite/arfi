@@ -28,12 +28,8 @@ module Arfi
                        desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
                        banner: 'adapter'
 
-      # +Arfi::Commands::Init#create+ -> Object
+      # Run the full init flow: validate schema, create base dirs, and optionally create adapter dirs.
       #
-      # Create (or ensure) ARFI directories exist.
-      #
-      # @raise [Arfi::Errors::InvalidSchemaFormat]
-      # @raise [Arfi::Errors::AdapterNotSupported]
       # @return [void]
       def create
         validate_schema_format!
@@ -43,12 +39,10 @@ module Arfi
 
       private
 
-      # +Arfi::Commands::Init#validate_schema_format!+ -> Object
-      #
-      # Validate that Rails schema format is ruby (:ruby / schema.rb).
+      # Validate that the Rails schema format is set to :ruby.
       #
       # @private
-      # @raise [Arfi::Errors::InvalidSchemaFormat]
+      # @raise [Arfi::Errors::InvalidSchemaFormat] If schema format is not :ruby
       # @return [void]
       def validate_schema_format!
         fmt =
@@ -61,7 +55,7 @@ module Arfi
         raise Arfi::Errors::InvalidSchemaFormat unless fmt == :ruby
       end
 
-      # Method documentation.
+      # Create the base db/functions and db/functions/public directories.
       #
       # @private
       # @return [void]
@@ -73,10 +67,10 @@ module Arfi
         puts "Ensured: #{root.join(DEFAULT_SCHEMA)}"
       end
 
-      # Method documentation.
+      # Create the adapter-specific function directories (e.g. db/functions/postgresql/public).
       #
       # @private
-      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @raise [Arfi::Errors::AdapterNotSupported] If adapter is not in the supported list
       # @return [void]
       def create_adapter_dirs
         adapter = options[:adapter].to_s # steep:ignore NoMethod

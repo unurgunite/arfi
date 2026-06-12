@@ -23,20 +23,14 @@ module Arfi
   # @api public
   class SqlFunctionLoader
     class << self
-      # +Arfi::SqlFunctionLoader.load!+ -> Object
+      # Load all SQL function files into the database.
       #
-      # Load SQL functions into the database.
+      # Handles both single-DB and multi-DB setups. Uses the given connection or infers it.
       #
-      # If `connection:` is provided, ARFI loads into that specific connection (useful for runtime retry paths).
-      # Otherwise ARFI uses the default ActiveRecord connection. In multi-db Rails apps, when `task_name` is nil
-      # and `connection` is nil, ARFI loads functions into all configured databases for the current env.
-      #
-      # @param [String, nil] task_name Rake task name suffix (e.g. +"db:migrate"+), or +nil+ for auto multi-db.
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter, nil] connection
-      #   Specific connection to load into, or +nil+ for default.
-      # @param [Boolean] clear_active_connections Whether to clear active connections after loading.
-      # @param [Boolean] verbose Print per-file loading messages.
-      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @param [String?] task_name Optional task name for logging (e.g. 'db:migrate')
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter?] connection Specific connection to load into
+      # @param [Boolean] clear_active_connections Whether to clear connections after loading
+      # @param [Boolean] verbose Whether to log each loaded file
       # @return [void]
       def load!(task_name: nil, connection: nil, clear_active_connections: true, verbose: true)
         task_short = task_name ? task_name[/([^:]+$)/] : nil
@@ -55,13 +49,11 @@ module Arfi
 
       private
 
-      # +Arfi::SqlFunctionLoader.raise_unless_supported_adapter+ -> Object
-      #
-      # Validate adapter support for the given connection.
+      # Raise unless the connection adapter is one of the supported types.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection to validate.
-      # @raise [Arfi::Errors::AdapterNotSupported] if +conn+ adapter is not PostgreSQL, MySQL, or Trilogy.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection
+      # @raise [Arfi::Errors::AdapterNotSupported] If adapter is not PostgreSQL, Mysql2, or Trilogy
       # @return [void]
       def raise_unless_supported_adapter(conn) # rubocop:disable SortedMethodsByCall/Waterfall
         allowed = %w[
@@ -73,22 +65,18 @@ module Arfi
         raise Arfi::Errors::AdapterNotSupported unless allowed.include?(conn.class.name)
       end
 
-      # +Arfi::SqlFunctionLoader.multi_db?+ -> Object
-      #
-      # Determine whether the current Rails environment has more than one DB configuration.
+      # Check whether the Rails app has multiple database configurations for the current environment.
       #
       # @private
-      # @return [Boolean]
+      # @return [Boolean] Whether multi-DB is configured
       def multi_db?
         ActiveRecord::Base.configurations.configurations.count { _1.env_name == Rails.env } > 1 # steep:ignore NoMethod
       end
 
-      # +Arfi::SqlFunctionLoader.populate_multiple_db+ -> Object
-      #
-      # Load functions into each configured DB for current env.
+      # Load functions into all databases in a multi-DB setup.
       #
       # @private
-      # @param [Boolean] verbose Print per-DB loading messages.
+      # @param [Boolean] verbose Whether to log each loaded file
       # @return [void]
       def populate_multiple_db(verbose:)
         # steep:ignore:start
@@ -99,12 +87,10 @@ module Arfi
         # steep:ignore:end
       end
 
-      # +Arfi::SqlFunctionLoader.default_connection+ -> Object
-      #
-      # Get the default ActiveRecord connection across Rails versions.
+      # Get the default database connection, handling Rails version differences.
       #
       # @private
-      # @return [Object]
+      # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter] Default connection
       def default_connection
         if Rails::VERSION::MAJOR < 7 || (Rails::VERSION::MAJOR == 7 && Rails::VERSION::MINOR < 2)
           ActiveRecord::Base.connection
@@ -113,15 +99,12 @@ module Arfi
         end
       end
 
-      # +Arfi::SqlFunctionLoader.populate_db+ -> Object
-      #
-      # Load SQL function files into a specific connection.
+      # Load SQL function files into a single database connection.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection to load into.
-      # @param [Boolean] verbose Print per-file loading messages.
-      # @param [String, nil] task_name Task name suffix for log messages.
-      # @raise [StandardError] if a SQL file fails to execute (re-raised with file context).
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection
+      # @param [Boolean] verbose Whether to log each loaded file
+      # @param [String?] task_name Optional task name for logging
       # @return [void]
       def populate_db(conn, verbose:, task_name:)
         files = sql_files(conn)
@@ -133,12 +116,10 @@ module Arfi
         files.each { |file| load_sql_file(conn, file, verbose, task_name) }
       end
 
-      # +Arfi::SqlFunctionLoader.clear_active_connections_if_needed+ -> Object
-      #
-      # Clear all active database connections, typically used as an ensure block.
+      # Clear all active database connections if requested, handling Rails version differences.
       #
       # @private
-      # @param [Boolean] clear Whether to actually clear connections.
+      # @param [Boolean] clear Whether to clear connections
       # @return [void]
       def clear_active_connections_if_needed(clear)
         return unless clear && defined?(ActiveRecord::Base)
@@ -151,16 +132,14 @@ module Arfi
         end
       end
 
-      # +Arfi::SqlFunctionLoader.load_sql_file+ -> Object
-      #
-      # Execute a single SQL file on the given connection.
+      # Load a single SQL file into the database, wrapping errors with file context.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection.
-      # @param [Pathname] file Path to the SQL file to execute.
-      # @param [Boolean] verbose Print a loading message.
-      # @param [String, nil] task_name Task name for log messages.
-      # @raise [StandardError] if the SQL file fails to execute.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection
+      # @param [Pathname, String] file Path to the SQL file
+      # @param [Boolean] verbose Whether to log the loaded file
+      # @param [String?] task_name Optional task name for logging
+      # @raise [StandardError] If the SQL execution fails (re-raised with file context)
       # @return [void]
       def load_sql_file(conn, file, verbose, task_name)
         sql = File.read(file.to_s).strip
@@ -176,14 +155,12 @@ module Arfi
         log_sql_load(conn, file, task_name)
       end
 
-      # +Arfi::SqlFunctionLoader.log_sql_load+ -> Object
-      #
-      # Log a loaded SQL file for verbose mode.
+      # Log that a SQL file was successfully loaded into the database.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection.
-      # @param [Pathname] file Path to the loaded SQL file.
-      # @param [String, nil] task_name Task name for log messages.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection
+      # @param [Pathname, String] file Path to the loaded SQL file
+      # @param [String?] task_name Optional task name for logging
       # @return [void]
       def log_sql_load(conn, file, task_name)
         label = "[ARFI] Loaded: #{File.basename(file)} into #{safe_db_env(conn)} #{safe_db_name(conn)}"
@@ -191,41 +168,37 @@ module Arfi
         log(conn, label)
       end
 
-      # +Arfi::SqlFunctionLoader.safe_db_env+ -> Object
-      #
-      # Extract the DB env name for logging.
+      # Get the database environment name safely, returning empty string on error.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection.
-      # @raise [StandardError] if accessing connection pool or db config fails (rescued internally).
-      # @return [String] environment name, or empty string on failure.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection
+      # @raise [StandardError]
+      # @return [String] Environment name, or empty string on error
+      # @return [String] if StandardError
       def safe_db_env(conn)
         conn.pool&.db_config&.env_name.to_s
       rescue StandardError
         ''
       end
 
-      # +Arfi::SqlFunctionLoader.safe_db_name+ -> Object
-      #
-      # Extract the DB name for logging.
+      # Get the database name safely, returning empty string on error.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection.
-      # @raise [StandardError] if accessing connection pool or db config fails (rescued internally).
-      # @return [String] database config name, or empty string on failure.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection
+      # @raise [StandardError]
+      # @return [String] Database name, or empty string on error
+      # @return [String] if StandardError
       def safe_db_name(conn)
         conn.pool&.db_config&.name.to_s
       rescue StandardError
         ''
       end
 
-      # +Arfi::SqlFunctionLoader.log+ -> Object
-      #
-      # Log a message to Rails.logger if present, otherwise stdout.
+      # Log a message via Rails.logger or stdout.
       #
       # @private
-      # @param [Object] _conn Database connection (unused, kept for interface consistency).
-      # @param [String] msg Message to log.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] _conn Database connection (unused)
+      # @param [String] msg Message to log
       # @return [void]
       def log(_conn, msg)
         if defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
@@ -235,21 +208,11 @@ module Arfi
         end
       end
 
-      # +Arfi::SqlFunctionLoader.sql_files+ -> Object
-      #
-      # Build the final ordered list of SQL files to execute for the given connection.
-      #
-      # Priority (higher wins):
-      #  10: adapter explicit schema dir (postgresql/<schema>/fn.sql)
-      #   9: adapter explicit public dir (postgresql/public/fn.sql)
-      #   8: adapter legacy public       (postgresql/fn.sql)
-      #   2: generic explicit public     (public/fn.sql)
-      #   1: generic legacy public       (fn.sql)
+      # Collect all SQL files to load for the given connection, applying override resolution.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection to determine adapter type.
-      # @raise [Arfi::Errors::AdapterNotSupported] if connection adapter is not supported.
-      # @return [Array<String>] ordered list of SQL file paths to execute.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection
+      # @return [Array<String>] Ordered list of SQL file paths
       def sql_files(conn)
         root = Rails.root.join('db', 'functions')
         return [] unless root.directory?
@@ -265,15 +228,13 @@ module Arfi
         finalize_items(generic + collect_adapter_sql_files(conn, adapter_root))
       end
 
-      # +Arfi::SqlFunctionLoader.collect_adapter_sql_files+ -> Object
-      #
-      # Collect adapter-specific SQL files based on adapter type.
+      # Collect adapter-specific SQL files, dispatching to the correct strategy based on adapter type.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection.
-      # @param [Pathname] adapter_root Adapter-specific base directory.
-      # @raise [Arfi::Errors::AdapterNotSupported] if connection adapter is unsupported.
-      # @return [Array<Hash{Symbol => String, Integer}>] collection of file metadata hashes.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection
+      # @param [Pathname] adapter_root Adapter root directory (e.g. db/functions/postgresql)
+      # @raise [Arfi::Errors::AdapterNotSupported] If adapter is not supported
+      # @return [Array<Arfi::sql_file_item>] List of SQL file items
       def collect_adapter_sql_files(conn, adapter_root)
         case conn.class.name
         when 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
@@ -285,13 +246,11 @@ module Arfi
         end
       end
 
-      # +Arfi::SqlFunctionLoader.collect_postgresql_sql_files+ -> Object
-      #
-      # Collect PostgreSQL-specific SQL files, including schema subdirectories.
+      # Collect SQL files for PostgreSQL, including schema subdirectories.
       #
       # @private
-      # @param [Pathname] adapter_root The adapter root directory.
-      # @return [Array<Hash>] collected SQL file metadata.
+      # @param [Pathname] adapter_root PostgreSQL adapter root directory
+      # @return [Array<Arfi::sql_file_item>] List of SQL file items
       def collect_postgresql_sql_files(adapter_root)
         items = collect_adapter_public_sql_files(adapter_root)
 
@@ -308,13 +267,11 @@ module Arfi
         items
       end
 
-      # +Arfi::SqlFunctionLoader.collect_adapter_public_sql_files+ -> Object
-      #
-      # Collect public schema SQL files for the given adapter root.
+      # Collect SQL files from the adapter's public directory (legacy + explicit).
       #
       # @private
-      # @param [Pathname] adapter_root The adapter root directory.
-      # @return [Array<Hash>] collected SQL file metadata.
+      # @param [Pathname] adapter_root Adapter root directory
+      # @return [Array<Arfi::sql_file_item>] List of SQL file items
       def collect_adapter_public_sql_files(adapter_root)
         items = [] # steep:ignore
         items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
@@ -322,15 +279,13 @@ module Arfi
         items
       end
 
-      # +Arfi::SqlFunctionLoader.collect_sql+ -> Object
-      #
-      # Collect SQL file candidates for a given glob, schema name, and priority.
+      # Collect SQL files matching a glob pattern, skipping underscore-prefixed files.
       #
       # @private
-      # @param [Pathname, String] glob Glob pattern to search for SQL files.
-      # @param [String] schema Schema name to associate with collected files.
-      # @param [Integer] priority Priority value for conflict resolution.
-      # @return [Array<Hash{Symbol => String, Integer}>] collection of file metadata hashes.
+      # @param [Pathname, String] glob Glob pattern to match SQL files
+      # @param [String] schema Schema name to assign to matched files
+      # @param [Integer] priority Priority for override resolution (higher = preferred)
+      # @return [Array<Arfi::sql_file_item>] List of SQL file items
       def collect_sql(glob:, schema:, priority:)
         Dir.glob(glob.to_s).filter_map do |path|
           base = File.basename(path)
@@ -340,13 +295,11 @@ module Arfi
         end
       end
 
-      # +Arfi::SqlFunctionLoader.finalize_items+ -> Object
-      #
-      # Deduplicate and deterministically order SQL file candidates by (schema, filename), keeping the highest priority.
+      # Finalize the file list by selecting the highest-priority item per schema/filename key.
       #
       # @private
-      # @param [Array<Hash{Symbol => String, Integer}>] items Unordered file candidate metadata.
-      # @return [Array<String>] sorted unique file paths (highest priority wins per key).
+      # @param [Array<Arfi::sql_file_item>] items All collected SQL file items
+      # @return [Array<String>] Ordered list of chosen file paths
       def finalize_items(items)
         # @type var chosen: Hash[String, { schema: String, base: String, path: String, priority: Integer }]
         chosen = {}
@@ -362,15 +315,13 @@ module Arfi
               .map { |item| item[:path] }
       end
 
-      # +Arfi::SqlFunctionLoader.adapter_root_for+ -> Object
-      #
-      # Resolve adapter directory under db/functions for the given connection.
+      # Resolve the adapter-specific root directory for the given connection.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection to determine adapter type.
-      # @param [Pathname] root Root +db/functions+ path.
-      # @raise [Arfi::Errors::AdapterNotSupported] if connection adapter is unsupported.
-      # @return [Pathname] adapter-specific directory path.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection
+      # @param [Pathname] root Project root (db/functions)
+      # @raise [Arfi::Errors::AdapterNotSupported] If adapter is not supported
+      # @return [Pathname] Adapter root directory
       def adapter_root_for(conn, root)
         case conn.class.name
         when 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
