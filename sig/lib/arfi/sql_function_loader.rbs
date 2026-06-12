@@ -1,94 +1,58 @@
 module Arfi
-  # +Arfi::SqlFunctionLoader+ is a class which loads user defined SQL functions into database.
+  # Loads user-defined SQL functions into the database.
+  #
+  # Supported directory layout (Option B: explicit public):
+  #
+  #   db/functions/public/*.sql                       (generic public)
+  #   db/functions/postgresql/public/*.sql            (postgres public)
+  #   db/functions/postgresql/<schema>/*.sql          (postgres schema)
+  #
+  # Backward-compatible legacy aliases:
+  #
+  #   db/functions/*.sql                              (generic public legacy)
+  #   db/functions/postgresql/*.sql                   (postgres public legacy)
+  #
+  # Rules:
+  # - underscore-prefixed files are ignored (_shared.sql)
+  # - adapter-specific overrides generic when schema+filename matches
   class SqlFunctionLoader
-    attr_accessor self.task_name: nil | String
-
-    # +Arfi::SqlFunctionLoader.load!+                        -> (nil | void)
-    #
-    # Loads user defined SQL functions into database.
-    #
-    # @param task_name [String|nil] Name of the task.
-    # @return [nil] if there is no `db/functions` directory.
-    # @return [void] if there is no errors.
-    # @raise [Arfi::Errors::AdapterNotSupported] if database adapter is SQLite.
-    def self.load!: (task_name: nil | String) -> (nil | untyped)
-
-    # +Arfi::SqlFunctionLoader#sql_functions_by_adapter+      -> Array<String>
-    #
-    # Helper method to get list of SQL files for specific database adapter.
-    #
-    # @!visibility private
-    # @private
-    # @return [Array<String>] List of SQL files.
-    # @raise [Arfi::Errors::AdapterNotSupported] if database adapter is not supported.
-    def self.sql_functions_by_adapter: -> Array[String]
-
-    # +Arfi::SqlFunctionLoader#multi_db?+                       -> Boolean
-    #
-    # Checks if the application has been configured to work with multiple databases.
-    #
-    # @return [Boolean]
-    def self.multi_db?: -> bool
-
-    # +Arfi::SqlFunctionLoader#populate_multiple_db+          -> void
-    #
-    # Loads user defined SQL functions into all databases.
-    #
-    # @!visibility private
-    # @private
-    # @return [void]
-    # @see Arfi::SqlFunctionLoader#multi_db?
-    # @see Arfi::SqlFunctionLoader#populate_db
-    def self.populate_multiple_db: -> void
-
-    # +Arfi::SqlFunctionLoader#raise_unless_supported_adapter+ -> void
-    #
-    # Checks if the database adapter is supported.
-    #
-    # @return [void]
-    # @raise [Arfi::Errors::AdapterNotSupported]
-    def self.raise_unless_supported_adapter: -> void
-
-    # +Arfi::SqlFunctionLoader#handle_db_population+         -> void
-    #
-    # Loads user defined SQL functions into database. This conditional branch was written this way because if we
-    # call db:migrate:db_name, then task_name will not be nil, but it will be zero if we call db:migrate. Then we
-    # check that the application has been configured to work with multiple databases in order to populate all
-    # databases, and only after this check can we populate the database in case the db:migrate (or any other) task
-    # has been called for configuration with a single database. Go to `lib/arfi/tasks/db.rake` for additional info.
-    #
-    # @!visibility private
-    # @private
-    # @return [void]
-    def self.handle_db_population: -> untyped
+    # @param task_name [String|nil] name of rake task (used only for behavior selection / logging)
+    # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter|nil] When provided, loader uses THIS
+    #  connection (important for runtime retry paths).
+    # @param clear_active_connections [Boolean]
+    # @param verbose [Boolean]
+    def self.load!: (?task_name: String?, ?connection: ::ActiveRecord::ConnectionAdapters::AbstractAdapter?, ?clear_active_connections: bool, ?verbose: bool) -> void
 
     private
 
-    # +Arfi::SqlFunctionLoader#populate_db+                   -> void
-    #
-    # Loads user defined SQL functions into database.
-    #
-    # @!visibility private
-    # @private
-    # @return [void]
-    def self.populate_db: () -> untyped
+    def self.raise_unless_supported_adapter: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> untyped
 
-    # +Arfi::SqlFunctionLoader#sql_files+                     -> Array<String>
-    #
-    # Helper method to get list of SQL files.
-    #
-    # @!visibility private
-    # @private
-    # @return [Array<String>] List of SQL files.
-    def self.sql_files: () -> Array[String]
+    def self.multi_db?: () -> untyped
 
-    # +Arfi::SqlFunctionLoader#conn+                          -> ActiveRecord::ConnectionAdapters::AbstractAdapter
-    #
-    # Helper method to get database connection.
-    #
-    # @!visibility private
-    # @private
-    # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter] Database connection.
-    def self.conn: () -> ::ActiveRecord::ConnectionAdapters::AbstractAdapter
+    def self.populate_multiple_db: (verbose: untyped) -> untyped
+
+    def self.populate_db: (untyped conn, verbose: untyped, task_name: untyped) -> (untyped)
+
+    def self.safe_db_env: (untyped conn) -> untyped
+
+    def self.safe_db_name: (untyped conn) -> untyped
+
+    def self.log: (untyped _conn, untyped msg) -> untyped
+
+    # Priority (higher wins):
+    #  10: adapter explicit schema dir (postgresql/<schema>/fn.sql)
+    #   9: adapter explicit public dir (postgresql/public/fn.sql)
+    #   8: adapter legacy public       (postgresql/fn.sql)
+    #   2: generic explicit public     (public/fn.sql)
+    #   1: generic legacy public       (fn.sql)
+    def self.sql_files: (untyped conn) -> (::Array[untyped] | untyped)
+
+    def self.collect_sql: (glob: untyped, schema: untyped, priority: untyped) -> untyped
+
+    def self.finalize_items: (untyped items) -> untyped
+
+    def self.adapter_root_for: (untyped conn, untyped root) -> untyped
+
+    def self.default_connection: () -> untyped
   end
 end

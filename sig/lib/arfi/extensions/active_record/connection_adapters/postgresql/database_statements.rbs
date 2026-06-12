@@ -1,0 +1,28 @@
+module Arfi
+  module PostgreSQL
+    module DatabaseStatementsPatch
+      ARFI_UNDEFINED_FUNCTION: ::Regexp
+
+      THREAD_GUARD_KEY: :arfi_reloading_functions
+
+      # Rails 6/7: SELECT often goes through exec_query
+      def exec_query: (*untyped args, **untyped kwargs) -> untyped
+
+      # DDL often goes through execute
+      def execute: (*untyped args, **untyped kwargs) -> untyped
+
+      # Rails 7+/8 may use raw_execute
+      def raw_execute: (*untyped args, **untyped kwargs) -> untyped
+
+      def internal_exec_query: (*untyped args, **untyped kwargs) -> untyped
+
+      private
+
+      def arfi_try_reload_and_retry?: (untyped e) -> (false | true)
+
+      def arfi_extract_function_ident: (untyped message) -> (::Array[nil] | untyped)
+
+      def arfi_has_function_file_for?: (untyped schema, untyped fn) -> (false | untyped)
+    end
+  end
+end

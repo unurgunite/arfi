@@ -12,22 +12,27 @@ module ActiveRecord
     #   ActiveRecord::Base.function_exists?('my_function') #=> true
     #   ActiveRecord::Base.function_exists?('my_function123') #=> false
     # @param [String] function_name The name of the function to check.
+    # @raise [ActiveRecord::AdapterNotFound]
     # @return [Boolean] Returns true if the function exists, false otherwise.
-    def self.function_exists?(function_name) # rubocop:disable Metrics/MethodLength
-      case connection
-      when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
-        connection.execute("SELECT * FROM pg_proc WHERE proname = '#{function_name}'").any?
-      when ActiveRecord::ConnectionAdapters::Mysql2Adapter
+    def self.function_exists?(function_name)
+      case connection.class.name
+      when 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
+        sql = "SELECT 1 FROM pg_proc WHERE proname = #{connection.quote(function_name)} LIMIT 1"
+        !connection.select_value(sql).nil?
+      when 'ActiveRecord::ConnectionAdapters::Mysql2Adapter', 'ActiveRecord::ConnectionAdapters::TrilogyAdapter'
+        schema = connection.quote(connection.current_database)
+        name   = connection.quote(function_name)
+
         sql = <<~SQL
           SELECT 1
           FROM information_schema.ROUTINES
           WHERE ROUTINE_TYPE = 'FUNCTION'
-            AND ROUTINE_SCHEMA = '#{connection.current_database}'
-            AND ROUTINE_NAME = '#{function_name}'
+            AND ROUTINE_SCHEMA = #{schema}
+            AND ROUTINE_NAME = #{name}
           LIMIT 1;
         SQL
 
-        !!connection.execute(sql).first
+        !connection.select_value(sql).nil?
       else
         raise ActiveRecord::AdapterNotFound, "adapter #{connection.class.name} is not supported"
       end

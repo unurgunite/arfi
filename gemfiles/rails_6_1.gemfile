@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+gemspec path: '..'
+
+gem 'benchmark'
+gem 'bigdecimal'
+gem 'mysql2'
+gem 'pg'
+gem 'rails', '~> 6.1'
