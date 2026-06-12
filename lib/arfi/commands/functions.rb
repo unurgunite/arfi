@@ -51,6 +51,7 @@ module Arfi
                        banner: 'adapter'
       option :force, type: :boolean, default: false,
                      desc: 'Overwrite existing function file if it already exists.'
+      # steep:ignore:end
       # Create (or overwrite with --force) a SQL function file in the appropriate directory.
       #
       # @param [String] function_ref Function reference string (e.g. 'my_func' or 'schema.my_func')
@@ -78,6 +79,7 @@ module Arfi
       option :adapter, type: :string,
                        desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
                        banner: 'adapter'
+      # steep:ignore:end
       # Delete a SQL function file from disk (supports both new and legacy locations).
       #
       # @param [String] function_ref Function reference string (e.g. 'my_func' or 'schema.my_func')
@@ -108,6 +110,7 @@ module Arfi
                       desc: 'Output format: table, paths, json'
       option :all, type: :boolean, default: false,
                    desc: 'Show all candidates (including overridden ones), not just the effective set.'
+      # steep:ignore:end
       # List SQL function files ARFI would load for the chosen adapter.
       #
       # @return [void]
