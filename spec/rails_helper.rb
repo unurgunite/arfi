@@ -30,12 +30,16 @@ ArfiSpec::PgSQLDB.connect!
 ArfiSpec::MySQLDB.connect! if defined?(ArfiSpec::MySQLDB)
 
 RSpec.configure do |config|
-  config.filter_run_excluding pgsql: true unless ArfiSpec::PgSQLDB.available?
-  config.filter_run_excluding mysql: true unless ArfiSpec::MySQLDB.available?
+  config.filter_run_excluding :pgsql unless ArfiSpec::PgSQLDB.available?
+  config.filter_run_excluding :mysql unless ArfiSpec::MySQLDB.available?
 
   config.before(:each, :pgsql) do
     ArfiSpec::PgSQLDB.ensure_connected!
     ArfiSpec::PgSQLDB.reset_public_schema!
+  rescue StandardError => e
+    raise unless ArfiSpec::DbConnectionHelper.connection_error?(e)
+
+    skip "PostgreSQL not available: #{e.message}"
   end
 
   config.after(:each, :pgsql) do
@@ -45,6 +49,10 @@ RSpec.configure do |config|
   config.before(:each, :mysql) do
     ArfiSpec::MySQLDB.ensure_connected!
     ArfiSpec::MySQLDB.reset!
+  rescue StandardError => e
+    raise unless ArfiSpec::DbConnectionHelper.connection_error?(e)
+
+    skip "MySQL not available: #{e.message}"
   end
 
   config.after(:each, :mysql) do
