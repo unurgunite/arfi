@@ -28,9 +28,10 @@ module Arfi
       #
       # Wrap ActiveRecord exec_query to support "reload functions and retry" behavior.
       #
-      # @param [Array<Object>] args Param documentation.
-      # @param [Hash] kwargs Param documentation.
-      # @return [Object]
+      # @param [Array<Object>] args Positional arguments forwarded to the original method.
+      # @param [Hash] kwargs Keyword arguments forwarded to the original method.
+      # @raise [StandardError] re-raised after retry if the function is not ARFI-managed.
+      # @return [Object] query result from the original method.
       def exec_query(*args, **kwargs)
         super
       rescue StandardError => e
@@ -42,9 +43,10 @@ module Arfi
       #
       # Wrap ActiveRecord execute (DDL path) to support "reload functions and retry" behavior.
       #
-      # @param [Array<Object>] args Param documentation.
-      # @param [Hash] kwargs Param documentation.
-      # @return [Object]
+      # @param [Array<Object>] args Positional arguments forwarded to the original method.
+      # @param [Hash] kwargs Keyword arguments forwarded to the original method.
+      # @raise [StandardError] re-raised after retry if the function is not ARFI-managed.
+      # @return [Object] query result from the original method.
       def execute(*args, **kwargs)
         super
       rescue StandardError => e
@@ -56,9 +58,10 @@ module Arfi
       #
       # Wrap ActiveRecord raw_execute (Rails 7+/8 path) to support "reload functions and retry" behavior.
       #
-      # @param [Array<Object>] args Param documentation.
-      # @param [Hash] kwargs Param documentation.
-      # @return [Object]
+      # @param [Array<Object>] args Positional arguments forwarded to the original method.
+      # @param [Hash] kwargs Keyword arguments forwarded to the original method.
+      # @raise [StandardError] re-raised after retry if the function is not ARFI-managed.
+      # @return [Object] query result from the original method.
       def raw_execute(*args, **kwargs)
         super
       rescue StandardError => e
@@ -70,9 +73,10 @@ module Arfi
       #
       # Wrap ActiveRecord internal_exec_query (Rails 7.1+ commonly uses this for SELECT paths).
       #
-      # @param [Array<Object>] args Param documentation.
-      # @param [Hash] kwargs Param documentation.
-      # @return [Object]
+      # @param [Array<Object>] args Positional arguments forwarded to the original method.
+      # @param [Hash] kwargs Keyword arguments forwarded to the original method.
+      # @raise [StandardError] re-raised after retry if the function is not ARFI-managed.
+      # @return [Object] query result from the original method.
       def internal_exec_query(*args, **kwargs)
         super
       rescue StandardError => e
@@ -87,8 +91,8 @@ module Arfi
       # Attempt to reload SQL functions and allow retry when an ARFI-managed function is missing.
       #
       # @private
-      # @param [Object] e Param documentation.
-      # @return [Boolean]
+      # @param [StandardError] e The exception raised by the query.
+      # @return [Boolean] +true+ if functions were reloaded and retry should happen.
       def arfi_try_reload_and_retry?(e)
         pg_error = e.cause || e
         return false unless pg_error.class.name == "PG::UndefinedFunction"
@@ -117,8 +121,8 @@ module Arfi
       # Parse a PostgreSQL undefined-function error message and return [schema, function_name].
       #
       # @private
-      # @param [Object] message Param documentation.
-      # @return [Array<(String|nil, String|nil)>]
+      # @param [String] message The error message from +PG::UndefinedFunction+.
+      # @return [Array<(String, String)>] two-element array of [schema, function_name].
       def arfi_extract_function_ident(message)
         m = message.to_s.match(ARFI_UNDEFINED_FUNCTION)
         return [nil, nil] unless m
@@ -133,9 +137,9 @@ module Arfi
       # Check whether a missing function is managed by ARFI (exists as a file under db/functions).
       #
       # @private
-      # @param [Object] schema Param documentation.
-      # @param [Object] fn Param documentation.
-      # @return [Boolean]
+      # @param [String, nil] schema Schema name or +nil+.
+      # @param [String] fn Function name.
+      # @return [Boolean] +true+ if a matching function file exists under +db/functions+.
       def arfi_has_function_file_for?(schema, fn)
         return false if fn.nil? || fn.empty?
 

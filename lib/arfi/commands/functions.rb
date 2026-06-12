@@ -40,6 +40,15 @@ module Arfi
       option :force, type: :boolean, default: false,
                      desc: 'Overwrite existing function file if it already exists.'
       # steep:ignore:end
+      # +Arfi::Commands::Functions#create+ -> void
+      #
+      # Create (or scaffold) a new SQL function file in the appropriate directory.
+      #
+      # @param [String] function_ref Function name, optionally schema-qualified (e.g. "audit.my_fn").
+      # @raise [Arfi::Errors::InvalidSchemaFormat]
+      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @raise [StandardError]
+      # @return [void]
       def create(function_ref)
         validate_schema_format!
         validate_adapter_option!
@@ -64,6 +73,14 @@ module Arfi
                        desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
                        banner: 'adapter'
       # steep:ignore:end
+      # +Arfi::Commands::Functions#destroy+ -> void
+      #
+      # Delete a SQL function file from disk, searching both new and legacy paths.
+      #
+      # @param [String] function_ref Function name, optionally schema-qualified.
+      # @raise [Arfi::Errors::InvalidSchemaFormat]
+      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @return [void]
       def destroy(function_ref)
         validate_schema_format!
         validate_adapter_option!
@@ -100,6 +117,14 @@ module Arfi
       option :all, type: :boolean, default: false,
                    desc: 'Show all candidates (including overridden ones), not just the effective set.'
       # steep:ignore:end
+      # +Arfi::Commands::Functions#list+ -> void
+      #
+      # List SQL function files ARFI would load for the given adapter.
+      # Output format: table (default), paths, or json.
+      #
+      # @raise [Arfi::Errors::NoFunctionsDir]
+      # @raise [ArgumentError]
+      # @return [void]
       def list
         validate_schema_format!
         validate_adapter_option!
@@ -121,13 +146,11 @@ module Arfi
 
       private
 
-      # +Arfi::Commands::Functions#validate_schema_format!+ -> Object
-      #
-      # Method documentation.
+      # Validate that Rails schema format is set to +:ruby+ (schema.rb).
       #
       # @private
-      # @raise [Arfi::Errors::InvalidSchemaFormat]
-      # @return [Object]
+      # @raise [Arfi::Errors::InvalidSchemaFormat] if schema format is not +:ruby+.
+      # @return [void]
       def validate_schema_format!
         fmt =
           if defined?(Rails) && Rails.application
@@ -139,23 +162,28 @@ module Arfi
         raise Arfi::Errors::InvalidSchemaFormat unless fmt == :ruby
       end
 
-      # +Arfi::Commands::Functions#validate_adapter_option!+ -> Object
-      #
-      # Method documentation.
+      # Validate that the adapter option is one of the supported values.
       #
       # @private
-      # @raise [Arfi::Errors::AdapterNotSupported]
-      # @return [Object]
+      # @raise [Arfi::Errors::AdapterNotSupported] if adapter is not in +ADAPTERS+.
+      # @return [void]
       def validate_adapter_option!
         return if adapter_opt.nil?
         raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.include?(adapter_opt.to_sym)
       end
 
-      # Accept:
-      # - "my_fn"
-      # - "public.my_fn"
-      # - "audit.my_fn"
-      # and/or --schema=audit + "my_fn"
+      # Parse a function reference string into +[schema, function_name]+.
+      #
+      # Accepts:
+      #   "my_fn"          -> [nil, "my_fn"]
+      #   "public.my_fn"   -> ["public", "my_fn"]
+      #   "audit.my_fn"    -> ["audit", "my_fn"]
+      # Schema can also be passed via +--schema+ (mutually exclusive with schema-qualified form).
+      #
+      # @private
+      # @param [String] ref Function reference string.
+      # @raise [ArgumentError] if the reference is empty, contains path separators, or schema is specified twice.
+      # @return [Array<(String, String)>] two-element array of [schema, function_name].
       def parse_function_ref(ref)
         raise ArgumentError, "Invalid function name: #{ref.inspect}" unless ref.is_a?(String)
 
@@ -178,27 +206,25 @@ module Arfi
         [schema, parsed_fn]
       end
 
-      # +Arfi::Commands::Functions#schema_opt+ -> Object
-      #
-      # Method documentation.
+      # Return the +--schema+ CLI option value, if provided.
       #
       # @private
-      # @return [Object]
+      # @return [String, nil]
       def schema_opt
         # steep:ignore:start
         options[:schema]&.to_s
         # steep:ignore:end
       end
 
-      # +Arfi::Commands::Functions#validate_identifiers!+ -> Object
+      # Validate that schema and function identifiers match the allowed pattern.
       #
-      # Method documentation.
+      # Schema-qualified names are only supported for +postgresql+ adapter.
       #
       # @private
-      # @param [Object] schema Param documentation.
-      # @param [Object] fn Param documentation.
-      # @raise [ArgumentError]
-      # @return [Object]
+      # @param [String, nil] schema Schema name, or +nil+ for generic scope.
+      # @param [String] fn Function name.
+      # @raise [ArgumentError] if identifiers contain invalid characters or schema is used for non-PostgreSQL adapters.
+      # @return [void]
       def validate_identifiers!(schema, fn)
         raise ArgumentError, "Invalid function name: #{fn.inspect}" unless IDENT.match?(fn)
         return if schema.nil?
@@ -209,15 +235,16 @@ module Arfi
         raise ArgumentError, 'Schema-qualified functions are only supported for PostgreSQL (adapter=postgresql).'
       end
 
-      # +Arfi::Commands::Functions#ensure_dirs!+ -> Object
+      # Ensure that required directory structure exists for function files.
       #
-      # Method documentation.
+      # Creates generic +public/+ dir and adapter-specific dirs when adapter is specified.
+      # For PostgreSQL, also creates schema-specific directory if provided.
       #
       # @private
-      # @param [Object] adapter Param documentation.
-      # @param [Object] schema Param documentation.
-      # @raise [Arfi::Errors::NoFunctionsDir]
-      # @return [Object]
+      # @param [String, nil] adapter Database adapter name (+postgresql+, +mysql+, or +nil+).
+      # @param [String, nil] schema PostgreSQL schema name (only used when +adapter+ is +postgresql+).
+      # @raise [Arfi::Errors::NoFunctionsDir] if +db/functions+ does not exist.
+      # @return [void]
       def ensure_dirs!(adapter:, schema:)
         root = Rails.root.join(ROOT_DIR)
 
@@ -241,16 +268,17 @@ module Arfi
         FileUtils.mkdir_p(adapter_root.join(sch))
       end
 
-      # +Arfi::Commands::Functions#build_sql_function+ -> Object
+      # Build the SQL function body using the default skeleton or a custom template.
       #
-      # Method documentation.
+      # Default skeletons adapt to the target database (PostgreSQL or MySQL/Trilogy syntax).
+      # When +--template+ is set, delegates to {#build_from_file}.
       #
       # @private
-      # @param [Object] schema Param documentation.
-      # @param [Object] fn Param documentation.
-      # @param [Object] original_ref Param documentation.
-      # @raise [StandardError]
-      # @return [Object]
+      # @param [String, nil] schema Schema name or +nil+.
+      # @param [String] fn Function name.
+      # @param [String] original_ref Original function reference as typed by the user.
+      # @raise [StandardError] if adapter is unknown.
+      # @return [String] SQL function body.
       def build_sql_function(schema, fn, original_ref:)
         return build_from_file(schema, fn, original_ref: original_ref) if options[:template] # steep:ignore NoMethod
 
@@ -287,10 +315,19 @@ module Arfi
         end
       end
 
-      # Template vars:
-      # - function_name / index_name: function name only
-      # - schema_name: postgres schema (defaults to public), else nil
-      # - qualified_name: "schema.fn" for postgres, else fn
+      # Evaluate a custom Ruby template file to generate SQL function body.
+      #
+      # Template variables available for interpolation:
+      #   - +index_name+ / +function_name+: function name only (backward compatible)
+      #   - +schema_name+: PostgreSQL schema (defaults to +public+) or +nil+
+      #   - +qualified_name+: +"schema.fn"+ for PostgreSQL, or just +fn+
+      #   - +original_ref+: raw user input
+      #
+      # @private
+      # @param [String, nil] schema Schema name or +nil+.
+      # @param [String] fn Function name.
+      # @param [String] original_ref Original function reference as typed by the user.
+      # @return [String] evaluated SQL body.
       def build_from_file(schema, fn, original_ref:)
         adapter = adapter_opt
         schema_name = adapter.nil? || adapter == 'postgresql' ? (schema || DEFAULT_SCHEMA) : nil
@@ -310,15 +347,15 @@ module Arfi
         # steep:ignore:end
       end
 
-      # +Arfi::Commands::Functions#write_file+ -> Object
+      # Write the function content to the canonical file path.
       #
-      # Method documentation.
+      # Skips if the file already exists and +--force+ is not set.
       #
       # @private
-      # @param [Object] schema Param documentation.
-      # @param [Object] fn Param documentation.
-      # @param [Object] content Param documentation.
-      # @return [Object]
+      # @param [String, nil] schema Schema name or +nil+.
+      # @param [String] fn Function name.
+      # @param [String] content SQL body to write.
+      # @return [void]
       def write_file(schema, fn, content)
         path = canonical_path(schema, fn)
 
@@ -331,16 +368,18 @@ module Arfi
         puts "Created: #{rel(path)}"
       end
 
-      # +Arfi::Commands::Functions#canonical_path+ -> Object
+      # Resolve the canonical filesystem path for a function file.
       #
-      # Method documentation.
+      # Generic functions go to +db/functions/public/<fn>.sql+.
+      # PostgreSQL functions go to +db/functions/postgresql/<schema>/<fn>.sql+.
+      # MySQL/Trilogy functions go to +db/functions/mysql/public/<fn>.sql+.
       #
       # @private
-      # @param [Object] schema Param documentation.
-      # @param [Object] fn Param documentation.
-      # @raise [ArgumentError]
-      # @raise [Arfi::Errors::AdapterNotSupported]
-      # @return [Object]
+      # @param [String, nil] schema Schema name or +nil+.
+      # @param [String] fn Function name.
+      # @raise [ArgumentError] if generic functions target a schema other than +public+.
+      # @raise [Arfi::Errors::AdapterNotSupported] if adapter is unknown.
+      # @return [String] absolute path.
       def canonical_path(schema, fn)
         root = Rails.root.join(ROOT_DIR)
         adapter = adapter_opt
@@ -368,7 +407,16 @@ module Arfi
         end
       end
 
-      # For destroy/migration support: include legacy aliases too
+      # Return all possible filesystem paths for a function file, ordered by priority.
+      #
+      # Includes both new (explicit +public/+ dirs) and legacy (flat) locations.
+      # Used by {#destroy} to find and remove existing files regardless of directory layout.
+      #
+      # @private
+      # @param [String, nil] schema Schema name or +nil+.
+      # @param [String] fn Function name.
+      # @raise [Arfi::Errors::AdapterNotSupported] if adapter is unknown.
+      # @return [Array<String>] list of candidate paths.
       def function_paths(schema, fn)
         root = Rails.root.join(ROOT_DIR)
         adapter = adapter_opt
@@ -402,26 +450,23 @@ module Arfi
         out.uniq
       end
 
-      # +Arfi::Commands::Functions#adapter_opt+ -> Object
-      #
-      # Method documentation.
+      # Return the +--adapter+ CLI option value, if provided.
       #
       # @private
-      # @return [Object]
+      # @return [String, nil]
       def adapter_opt
         # steep:ignore:start
         options[:adapter]&.to_s
         # steep:ignore:end
       end
 
-      # +Arfi::Commands::Functions#infer_adapter_from_config+ -> Object
+      # Infer the database adapter name from Rails database configuration.
       #
-      # Method documentation.
+      # Attempts to read the adapter from the primary DB config without connecting.
       #
       # @private
       # @raise [StandardError]
-      # @return [Object]
-      # @return [nil] if StandardError
+      # @return [String, nil] adapter name (e.g. +postgresql+, +mysql+, +trilogy+), or +nil+ on failure.
       def infer_adapter_from_config
         # Try to avoid connecting to DB: read Rails configs
         # @type var cfgs: Array[ActiveRecord::DatabaseConfigurations::DatabaseConfig]
@@ -441,12 +486,21 @@ module Arfi
         nil
       end
 
-      # Priority (higher wins), same spirit as the loader I suggested earlier:
-      #  10: adapter explicit schema dir (postgresql/<schema>/fn.sql)
-      #   9: adapter explicit public dir (postgresql/public/fn.sql, mysql/public/fn.sql)
-      #   8: adapter legacy public       (postgresql/fn.sql, mysql/fn.sql)
-      #   2: generic explicit public     (public/fn.sql)
-      #   1: generic legacy public       (fn.sql)
+      # Resolve the effective set of SQL function files with priority-based selection.
+      #
+      # Priority (higher wins):
+      #   10: adapter explicit schema dir (+postgresql/<schema>/fn.sql+)
+      #    9: adapter explicit public dir (+postgresql/public/fn.sql+, +mysql/public/fn.sql+)
+      #    8: adapter legacy public (+postgresql/fn.sql+)
+      #    2: generic explicit public (+public/fn.sql+)
+      #    1: generic legacy public (+fn.sql+)
+      #
+      # Used by {#list} to determine which files ARFI would load.
+      #
+      # @private
+      # @param [String] adapter Database adapter name.
+      # @raise [Arfi::Errors::NoFunctionsDir] if +db/functions+ does not exist.
+      # @return [Array<Hash>] resolved function entries with metadata.
       def resolve_functions_for(adapter:)
         root = Rails.root.join(ROOT_DIR)
         raise Arfi::Errors::NoFunctionsDir unless root.directory?
@@ -518,17 +572,17 @@ module Arfi
         rows
       end
 
-      # +Arfi::Commands::Functions#collect_candidates+ -> Object
+      # Collect candidate function files from a glob pattern.
       #
-      # Method documentation.
+      # Skips underscore-prefixed files (e.g. +_shared.sql+).
       #
       # @private
-      # @param [Object] glob Param documentation.
-      # @param [Object] schema Param documentation.
-      # @param [Object] source Param documentation.
-      # @param [Object] origin Param documentation.
-      # @param [Object] priority Param documentation.
-      # @return [Object]
+      # @param [Pathname, String] glob Glob pattern to search.
+      # @param [String] schema Schema name to tag candidates with.
+      # @param [String] source Origin label (+"generic"+, +"postgresql"+, +"mysql"+).
+      # @param [String] origin Path style (+"explicit"+ or +"legacy"+).
+      # @param [Integer] priority Priority value for conflict resolution.
+      # @return [Array<Hash>] candidate file metadata hashes.
       def collect_candidates(glob:, schema:, source:, origin:, priority:)
         Dir.glob(glob.to_s).filter_map do |path|
           base = File.basename(path)
@@ -547,13 +601,13 @@ module Arfi
         end
       end
 
-      # +Arfi::Commands::Functions#print_table+ -> Object
+      # Print the function listing as a formatted ASCII table.
       #
-      # Method documentation.
+      # Supports two column modes: default and +--all+ (includes shadowed candidates).
       #
       # @private
-      # @param [Object] rows Param documentation.
-      # @return [Object]
+      # @param [Array<Hash>] rows Function entries with keys +:schema+, +:function+, +:source+, etc.
+      # @return [void]
       def print_table(rows)
         # rows may include extra fields depending on --all
         cols =
@@ -586,13 +640,13 @@ module Arfi
         end
       end
 
-      # +Arfi::Commands::Functions#rel+ -> Object
+      # Convert an absolute path to a project-relative path for display.
       #
-      # Method documentation.
+      # Strips the +Rails.root+ prefix if present; otherwise returns the path as-is.
       #
       # @private
-      # @param [Object] path Param documentation.
-      # @return [Object]
+      # @param [Pathname, String] path Absolute filesystem path.
+      # @return [String] Relative or display path.
       def rel(path)
         root = Rails.root.to_s
         p = path.to_s

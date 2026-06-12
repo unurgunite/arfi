@@ -12,6 +12,7 @@ module ActiveRecord
     #   ActiveRecord::Base.function_exists?('my_function') #=> true
     #   ActiveRecord::Base.function_exists?('my_function123') #=> false
     # @param [String] function_name The name of the function to check.
+    # @raise [ActiveRecord::AdapterNotFound]
     # @return [Boolean] Returns true if the function exists, false otherwise.
     def self.function_exists?(function_name)
       case connection.class.name
