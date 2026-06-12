@@ -25,11 +25,19 @@ module ActiveRecord
       end
     end
 
+    # Method documentation.
+    #
+    # @param [String] function_name Param documentation.
+    # @return [Boolean]
     def self.pg_function_exists?(function_name)
       sql = "SELECT 1 FROM pg_proc WHERE proname = #{connection.quote(function_name)} LIMIT 1"
       !connection.select_value(sql).nil?
     end
 
+    # Method documentation.
+    #
+    # @param [String] function_name Param documentation.
+    # @return [Boolean]
     def self.mysql_function_exists?(function_name)
       !connection.select_value(<<~SQL).nil?
         SELECT 1 FROM information_schema.ROUTINES

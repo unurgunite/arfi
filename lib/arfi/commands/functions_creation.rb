@@ -6,6 +6,13 @@ module Arfi
     module FunctionsCreation
       private
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] adapter Param documentation.
+      # @param [String?] schema Param documentation.
+      # @raise [Arfi::Errors::NoFunctionsDir]
+      # @return [void]
       def ensure_dirs!(adapter:, schema:)
         root = Rails.root.join(ROOT_DIR)
         raise Arfi::Errors::NoFunctionsDir unless root.directory?
@@ -22,6 +29,14 @@ module Arfi
         FileUtils.mkdir_p(adapter_root.join(sch))
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] function_name Param documentation.
+      # @param [String] original_ref Param documentation.
+      # @raise [StandardError]
+      # @return [String]
       def build_sql_function(schema, function_name, original_ref:)
         return build_from_file(schema, function_name, original_ref: original_ref) if options[:template]
 
@@ -35,12 +50,26 @@ module Arfi
         end
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] function_name Param documentation.
+      # @param [String] original_ref Param documentation.
+      # @return [String]
       def build_from_file(schema, function_name, original_ref:)
         schema_name = resolve_schema_name(schema)
         qualified_name = schema_name ? "#{schema_name}.#{function_name}" : function_name
         evaluate_template(function_name, schema_name, qualified_name, original_ref)
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] function_name Param documentation.
+      # @param [String] content Param documentation.
+      # @return [void]
       def write_file(schema, function_name, content)
         path = canonical_path(schema, function_name)
         if File.exist?(path) && !options[:force]
@@ -51,6 +80,12 @@ module Arfi
         puts "Created: #{rel(path)}"
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] function_name Param documentation.
+      # @return [void]
       def remove_function_file(schema, function_name)
         candidates = function_paths(schema, function_name)
         path = candidates.find { |p| File.exist?(p) }
@@ -62,6 +97,14 @@ module Arfi
         puts "Deleted: #{rel(path)}"
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String] function_name Param documentation.
+      # @param [String?] schema_name Param documentation.
+      # @param [String] qualified_name Param documentation.
+      # @param [String] original_ref Param documentation.
+      # @return [Object]
       def evaluate_template(function_name, schema_name, qualified_name, original_ref)
         tpl = File.read(options[:template])
         RubyVM::InstructionSequence.compile(<<~RUBY).eval # steep:ignore
@@ -74,6 +117,12 @@ module Arfi
         RUBY
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] function_name Param documentation.
+      # @return [String]
       def build_postgresql_skeleton(schema, function_name)
         sch = schema || DEFAULT_SCHEMA
         qualified = "#{sch}.#{function_name}"
@@ -87,6 +136,11 @@ module Arfi
         SQL
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String] function_name Param documentation.
+      # @return [String]
       def build_mysql_skeleton(function_name)
         <<~SQL
           -- MySQL note: you may need to DROP FUNCTION IF EXISTS #{function_name};

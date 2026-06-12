@@ -53,6 +53,8 @@ module Arfi
                      desc: 'Overwrite existing function file if it already exists.'
       # steep:ignore:end
       # +Arfi::Commands::Functions#create+ -> void
+      # @param [String] function_ref Param documentation.
+      # @return [void]
       def create(function_ref)
         validate_schema_format!
         validate_adapter_option!
@@ -78,6 +80,8 @@ module Arfi
                        banner: 'adapter'
       # steep:ignore:end
       # +Arfi::Commands::Functions#destroy+ -> void
+      # @param [String] function_ref Param documentation.
+      # @return [void]
       def destroy(function_ref)
         validate_schema_format!
         validate_adapter_option!
@@ -106,6 +110,7 @@ module Arfi
                    desc: 'Show all candidates (including overridden ones), not just the effective set.'
       # steep:ignore:end
       # +Arfi::Commands::Functions#list+ -> void
+      # @return [void]
       def list
         validate_schema_format!
         validate_adapter_option!

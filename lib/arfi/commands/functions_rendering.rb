@@ -6,6 +6,11 @@ module Arfi
     module FunctionsRendering
       private
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Array<Hash<Symbol, Object>>] rows Param documentation.
+      # @return [void]
       def render_list(rows)
         case options[:format].to_s
         when 'paths'
@@ -17,6 +22,11 @@ module Arfi
         end
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Array<Hash<Symbol, Object>>] rows Param documentation.
+      # @return [void]
       def print_table(rows)
         cols = table_columns
         table = stringify_rows(rows)
@@ -26,6 +36,10 @@ module Arfi
         render_table_rows(table, cols, widths)
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @return [Array<String>]
       def table_columns
         if options[:all]
           %w[chosen schema function source origin priority path shadowed_by]
@@ -34,6 +48,11 @@ module Arfi
         end
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Array<Hash<Symbol, Object>>] rows Param documentation.
+      # @return [Array<Hash<Symbol, Object>>]
       def stringify_rows(rows)
         rows.map do |r|
           r = r.dup
@@ -44,6 +63,12 @@ module Arfi
         end
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Array<String>] cols Param documentation.
+      # @param [Array<Hash<Symbol, Object>>] table Param documentation.
+      # @return [Hash<String, Integer>]
       def calculate_widths(cols, table)
         widths = {} # steep:ignore
         cols.each do |c|
@@ -52,12 +77,24 @@ module Arfi
         widths
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Array<Hash<Symbol, Object>>] table Param documentation.
+      # @param [Array<String>] cols Param documentation.
+      # @param [Hash<String, Integer>] widths Param documentation.
+      # @return [void]
       def render_table_rows(table, cols, widths)
         table.each do |r|
           puts cols.map { |c| r[c.to_sym].to_s.ljust(widths[c]) }.join('  ')
         end
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Array<Arfi::Commands::candidate>] arr Param documentation.
+      # @return [Array<Hash<Symbol, Object>>]
       def resolve_key_group(arr)
         chosen = arr.max_by { |c| c[:priority] }
         return [] unless chosen
@@ -69,6 +106,12 @@ module Arfi
         end
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Array<Arfi::Commands::candidate>] arr Param documentation.
+      # @param [Arfi::Commands::candidate] chosen Param documentation.
+      # @return [Array<Hash<Symbol, Object>>]
       def all_mode_rows(arr, chosen)
         chosen_path = chosen[:path]
         arr.sort_by { |c| [-c[:priority], c[:schema], c[:function]] }.map do |c|
@@ -79,6 +122,12 @@ module Arfi
         end
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Arfi::Commands::candidate] chosen Param documentation.
+      # @param [Array<Arfi::Commands::candidate>] arr Param documentation.
+      # @return [Array<Hash<Symbol, Object>>]
       def default_mode_row(chosen, arr)
         shadowed = (arr - [chosen])
         [chosen.merge(chosen: true, shadowed: shadowed.map { rel(_1[:path]) })]

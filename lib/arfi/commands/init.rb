@@ -61,6 +61,10 @@ module Arfi
         raise Arfi::Errors::InvalidSchemaFormat unless fmt == :ruby
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @return [void]
       def create_base_dirs
         root = Rails.root.join(ROOT_DIR)
         FileUtils.mkdir_p(root)
@@ -69,6 +73,11 @@ module Arfi
         puts "Ensured: #{root.join(DEFAULT_SCHEMA)}"
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @raise [Arfi::Errors::AdapterNotSupported]
+      # @return [void]
       def create_adapter_dirs
         adapter = options[:adapter].to_s # steep:ignore NoMethod
         raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.include?(adapter.to_sym)
