@@ -37,11 +37,7 @@ module ArfiSpec
         warn "[ARFI SPEC] Postgres unavailable (#{e.class}: #{e.message}). Skipping pgsql specs."
         @available = false
       ensure
-        begin
-          PgsqlProbeRecord.connection_pool.disconnect!
-        rescue StandardError
-          nil
-        end
+        safe_disconnect_probe!
       end
 
       # +ArfiSpec::PgSQLDB#available?+ -> Object
@@ -88,6 +84,12 @@ module ArfiSpec
         conn = ActiveRecord::Base.connection
         conn.execute('DROP SCHEMA IF EXISTS public CASCADE')
         conn.execute('CREATE SCHEMA public')
+      end
+
+      def safe_disconnect_probe!
+        PgsqlProbeRecord.connection_pool.disconnect!
+      rescue StandardError
+        nil
       end
 
       # +ArfiSpec::PgSQLDB#disconnect!+ -> Object

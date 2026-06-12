@@ -25,16 +25,49 @@ Rake::Task.define_task(:environment) unless Rake::Task.task_defined?(:environmen
   Rake::Task[task].enhance(['_db:arfi_enhance']) if Rake::Task.task_defined?(task)
 end
 
-def arfi_db_config_for(name)
-  # Rails 6/7+ preferred way
-  if ActiveRecord::Base.respond_to?(:configurations) && ActiveRecord::Base.configurations
-    list = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env, name: name)
-    list = Array(list)
-    cfg = list.first
-    cfg&.configuration_hash
+def define_arfi_enhance_for(task, db_name)
+  Rake::Task.define_task("_db:arfi_enhance:#{task.name}") do
+    run_arfi_loader_for(task, arfi_db_config_for(db_name))
   end
+  task.enhance(["_db:arfi_enhance:#{task.name}"])
+end
 
+def run_arfi_loader_for(task, config_hash)
+  if config_hash
+    run_with_connection_switch(task, config_hash)
+  else
+    run_arfi_loader(task)
+  end
+end
+
+def run_with_connection_switch(task, config_hash)
+  original = current_db_config
+  ActiveRecord::Base.establish_connection(config_hash)
+  run_arfi_loader(task)
+ensure
+  ActiveRecord::Base.establish_connection(original) if original
+end
+
+def current_db_config
+  ActiveRecord::Base.connection_db_config
+rescue StandardError
   nil
+end
+
+def run_arfi_loader(task)
+  Arfi::SqlFunctionLoader.load!(
+    task_name: task.name,
+    connection: ActiveRecord::Base.connection,
+    verbose: true
+  )
+end
+
+def arfi_db_config_for(name)
+  return unless ActiveRecord::Base.respond_to?(:configurations) && ActiveRecord::Base.configurations
+
+  list = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env, name: name)
+  cfg = Array(list).first
+  cfg&.configuration_hash
 end
 
 # Enhance suffixed tasks: db:migrate:<db>, db:schema:load:<db>, etc.
@@ -43,38 +76,5 @@ possible_tasks = Rake::Task.tasks.select { |t| t.name.match?(pattern) }
 
 possible_tasks.each do |task|
   db_name = task.name.match(pattern)[2]
-
-  Rake::Task.define_task("_db:arfi_enhance:#{task.name}") do
-    # Connect explicitly to the named DB so we load functions into the correct target.
-    config_hash = arfi_db_config_for(db_name)
-
-    if config_hash
-      original_config = begin
-        ActiveRecord::Base.connection_db_config
-      rescue StandardError
-        nil
-      end
-
-      begin
-        ActiveRecord::Base.establish_connection(config_hash)
-        Arfi::SqlFunctionLoader.load!(
-          task_name: task.name,
-          connection: ActiveRecord::Base.connection,
-          verbose: true
-        )
-      ensure
-        # Restore previous connection if we had one
-        ActiveRecord::Base.establish_connection(original_config) if original_config
-      end
-    else
-      # Fallback: use current connection
-      Arfi::SqlFunctionLoader.load!(
-        task_name: task.name,
-        connection: ActiveRecord::Base.connection,
-        verbose: true
-      )
-    end
-  end
-
-  task.enhance(["_db:arfi_enhance:#{task.name}"])
+  define_arfi_enhance_for(task, db_name)
 end

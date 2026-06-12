@@ -32,7 +32,8 @@ module Arfi
       # and `connection` is nil, ARFI loads functions into all configured databases for the current env.
       #
       # @param [String, nil] task_name Rake task name suffix (e.g. +"db:migrate"+), or +nil+ for auto multi-db.
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter, nil] connection Specific connection to load into, or +nil+ for default.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter, nil] connection
+      #   Specific connection to load into, or +nil+ for default.
       # @param [Boolean] clear_active_connections Whether to clear active connections after loading.
       # @param [Boolean] verbose Print per-file loading messages.
       # @raise [Arfi::Errors::AdapterNotSupported]
@@ -49,21 +50,7 @@ module Arfi
           populate_db(conn, verbose: verbose, task_name: task_short)
         end
       ensure
-        # +Arfi::SqlFunctionLoader.load!+ -> Object
-        #
-        # Ensure clause: optionally clears active connections.
-        #
-        # @private
-        # @return [void]
-        if clear_active_connections && defined?(ActiveRecord::Base)
-          if ActiveRecord::Base.respond_to?(:connection_handler) &&
-             ActiveRecord::Base.connection_handler.respond_to?(:clear_active_connections!)
-            ActiveRecord::Base.connection_handler.clear_active_connections!
-          elsif ActiveRecord::Base.respond_to?(:clear_active_connections!)
-            # Older Rails fallback
-            ActiveRecord::Base.clear_active_connections!
-          end
-        end
+        clear_active_connections_if_needed(clear_active_connections)
       end
 
       private
@@ -112,6 +99,20 @@ module Arfi
         # steep:ignore:end
       end
 
+      # +Arfi::SqlFunctionLoader.default_connection+ -> Object
+      #
+      # Get the default ActiveRecord connection across Rails versions.
+      #
+      # @private
+      # @return [Object]
+      def default_connection
+        if Rails::VERSION::MAJOR < 7 || (Rails::VERSION::MAJOR == 7 && Rails::VERSION::MINOR < 2)
+          ActiveRecord::Base.connection
+        else
+          ActiveRecord::Base.lease_connection
+        end
+      end
+
       # +Arfi::SqlFunctionLoader.populate_db+ -> Object
       #
       # Load SQL function files into a specific connection.
@@ -129,22 +130,65 @@ module Arfi
           return
         end
 
-        files.each do |file|
-          sql = File.read(file).strip
-          next if sql.empty?
+        files.each { |file| load_sql_file(conn, file, verbose, task_name) }
+      end
 
-          begin
-            conn.execute(sql)
-          rescue StandardError => e
-            raise e.class, "#{e.message}\n[ARFI] while loading #{file}", e.backtrace
-          end
+      # +Arfi::SqlFunctionLoader.clear_active_connections_if_needed+ -> Object
+      #
+      # Clear all active database connections, typically used as an ensure block.
+      #
+      # @private
+      # @param [Boolean] clear Whether to actually clear connections.
+      # @return [void]
+      def clear_active_connections_if_needed(clear)
+        return unless clear && defined?(ActiveRecord::Base)
 
-          next unless verbose
-
-          env = safe_db_env(conn)
-          name = safe_db_name(conn)
-          log(conn, "[ARFI] Loaded: #{File.basename(file)} into #{env} #{name}#{" (#{task_name})" if task_name}")
+        if ActiveRecord::Base.respond_to?(:connection_handler) &&
+           ActiveRecord::Base.connection_handler.respond_to?(:clear_active_connections!)
+          ActiveRecord::Base.connection_handler.clear_active_connections!
+        elsif ActiveRecord::Base.respond_to?(:clear_active_connections!)
+          ActiveRecord::Base.clear_active_connections!
         end
+      end
+
+      # +Arfi::SqlFunctionLoader.load_sql_file+ -> Object
+      #
+      # Execute a single SQL file on the given connection.
+      #
+      # @private
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection.
+      # @param [Pathname] file Path to the SQL file to execute.
+      # @param [Boolean] verbose Print a loading message.
+      # @param [String, nil] task_name Task name for log messages.
+      # @raise [StandardError] if the SQL file fails to execute.
+      # @return [void]
+      def load_sql_file(conn, file, verbose, task_name)
+        sql = File.read(file).strip
+        return if sql.empty?
+
+        begin
+          conn.execute(sql)
+        rescue StandardError => e
+          raise e.class, "#{e.message}\n[ARFI] while loading #{file}", e.backtrace
+        end
+        return unless verbose
+
+        log_sql_load(conn, file, task_name)
+      end
+
+      # +Arfi::SqlFunctionLoader.log_sql_load+ -> Object
+      #
+      # Log a loaded SQL file for verbose mode.
+      #
+      # @private
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection.
+      # @param [Pathname] file Path to the loaded SQL file.
+      # @param [String, nil] task_name Task name for log messages.
+      # @return [void]
+      def log_sql_load(conn, file, task_name)
+        label = "[ARFI] Loaded: #{File.basename(file)} into #{safe_db_env(conn)} #{safe_db_name(conn)}"
+        label += " (#{task_name})" if task_name
+        log(conn, label)
       end
 
       # +Arfi::SqlFunctionLoader.safe_db_env+ -> Object
@@ -210,39 +254,72 @@ module Arfi
         root = Rails.root.join('db', 'functions')
         return [] unless root.directory?
 
-        # @type var items: Array[{ schema: String, base: String, path: String, priority: Integer }]
-        items = []
-
-        # Generic public (legacy + explicit)
-        items.concat collect_sql(glob: root.join('*.sql'), schema: 'public', priority: 1)
-        items.concat collect_sql(glob: root.join('public', '*.sql'), schema: 'public', priority: 2)
+        generic = [
+          collect_sql(glob: root.join('*.sql'), schema: 'public', priority: 1),
+          collect_sql(glob: root.join('public', '*.sql'), schema: 'public', priority: 2)
+        ].flatten
 
         adapter_root = adapter_root_for(conn, root)
-        return finalize_items(items) if adapter_root.nil? || !adapter_root.directory?
+        return finalize_items(generic) unless adapter_root&.directory?
 
+        finalize_items(generic + collect_adapter_sql_files(conn, adapter_root))
+      end
+
+      # +Arfi::SqlFunctionLoader.collect_adapter_sql_files+ -> Object
+      #
+      # Collect adapter-specific SQL files based on adapter type.
+      #
+      # @private
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Database connection.
+      # @param [Pathname] adapter_root Adapter-specific base directory.
+      # @raise [Arfi::Errors::AdapterNotSupported] if connection adapter is unsupported.
+      # @return [Array<Hash{Symbol => String, Integer}>] collection of file metadata hashes.
+      def collect_adapter_sql_files(conn, adapter_root)
         case conn.class.name
         when 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
-          items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
-          items.concat collect_sql(glob: adapter_root.join('public', '*.sql'), schema: 'public', priority: 9)
-
-          # Adapter schema dirs (explicit): db/functions/postgresql/<schema>/*.sql
-          Dir.children(adapter_root).sort.each do |child|
-            next if child.start_with?('_')
-            next if child == 'public'
-
-            dir = adapter_root.join(child)
-            next unless dir.directory?
-
-            items.concat collect_sql(glob: dir.join('*.sql'), schema: child, priority: 10)
-          end
+          collect_postgresql_sql_files(adapter_root)
         when 'ActiveRecord::ConnectionAdapters::Mysql2Adapter', 'ActiveRecord::ConnectionAdapters::TrilogyAdapter'
-          items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
-          items.concat collect_sql(glob: adapter_root.join('public', '*.sql'), schema: 'public', priority: 9)
+          collect_adapter_public_sql_files(adapter_root)
         else
           raise Arfi::Errors::AdapterNotSupported
         end
+      end
 
-        finalize_items(items)
+      # +Arfi::SqlFunctionLoader.collect_postgresql_sql_files+ -> Object
+      #
+      # Collect PostgreSQL-specific SQL files, including schema subdirectories.
+      #
+      # @private
+      # @param [Pathname] adapter_root The adapter root directory.
+      # @return [Array<Hash>] collected SQL file metadata.
+      def collect_postgresql_sql_files(adapter_root)
+        items = collect_adapter_public_sql_files(adapter_root)
+
+        Dir.children(adapter_root).sort.each do |child|
+          next if child.start_with?('_')
+          next if child == 'public'
+
+          dir = adapter_root.join(child)
+          next unless dir.directory?
+
+          items.concat collect_sql(glob: dir.join('*.sql'), schema: child, priority: 10)
+        end
+
+        items
+      end
+
+      # +Arfi::SqlFunctionLoader.collect_adapter_public_sql_files+ -> Object
+      #
+      # Collect public schema SQL files for the given adapter root.
+      #
+      # @private
+      # @param [Pathname] adapter_root The adapter root directory.
+      # @return [Array<Hash>] collected SQL file metadata.
+      def collect_adapter_public_sql_files(adapter_root)
+        items = []
+        items.concat collect_sql(glob: adapter_root.join('*.sql'), schema: 'public', priority: 8)
+        items.concat collect_sql(glob: adapter_root.join('public', '*.sql'), schema: 'public', priority: 9)
+        items
       end
 
       # +Arfi::SqlFunctionLoader.collect_sql+ -> Object
@@ -303,20 +380,6 @@ module Arfi
           root.join('mysql')
         else
           raise Arfi::Errors::AdapterNotSupported
-        end
-      end
-
-      # +Arfi::SqlFunctionLoader.default_connection+ -> Object
-      #
-      # Get the default ActiveRecord connection across Rails versions.
-      #
-      # @private
-      # @return [Object]
-      def default_connection
-        if Rails::VERSION::MAJOR < 7 || (Rails::VERSION::MAJOR == 7 && Rails::VERSION::MINOR < 2)
-          ActiveRecord::Base.connection
-        else
-          ActiveRecord::Base.lease_connection
         end
       end
     end
