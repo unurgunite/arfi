@@ -3,14 +3,6 @@
 RSpec.describe Arfi::SqlFunctionLoader, :mysql do
   include ArfiSpec::TmpRoot
 
-  def load!
-    described_class.load!(verbose: false)
-  end
-
-  def select_value(sql)
-    ActiveRecord::Base.connection.select_value(sql)
-  end
-
   before do
     write_function('db/functions/mysql/public/arfi_ok.sql', <<~SQL)
       CREATE FUNCTION arfi_ok() RETURNS INT DETERMINISTIC RETURN 1;
@@ -18,13 +10,13 @@ RSpec.describe Arfi::SqlFunctionLoader, :mysql do
   end
 
   it 'loads mysql/public functions' do
-    load!
+    load_functions!
     expect(select_value('SELECT arfi_ok()').to_i).to eq(1)
   end
 
   it 'ignores underscore-prefixed files' do
     write_function('db/functions/mysql/public/_boom.sql', 'SELECT 1/0;')
-    load!
+    load_functions!
     expect(select_value('SELECT arfi_ok()').to_i).to eq(1)
   end
 
@@ -39,7 +31,7 @@ RSpec.describe Arfi::SqlFunctionLoader, :mysql do
     end
 
     it 'prefers adapter file over generic' do
-      load!
+      load_functions!
       expect(select_value('SELECT arfi_echo()')).to eq('mysql')
     end
   end

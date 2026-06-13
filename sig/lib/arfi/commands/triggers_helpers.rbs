@@ -1,0 +1,33 @@
+module Arfi
+  module Commands
+    module TriggersHelpers : Arfi::Commands::Triggers
+      private
+
+      def validate_schema_format!: () -> void
+
+      def validate_adapter_option!: () -> void
+
+      def parse_trigger_ref: (String ref) -> [String?, String]
+
+      def schema_opt: () -> String?
+
+      def validate_identifiers!: (String? schema, String trigger_name) -> void
+
+      def validate_trigger_ref!: (String ref) -> void
+
+      def check_schema_conflict!: (String? parsed_schema) -> void
+
+      def resolve_schema_name: (String? schema) -> String?
+
+      def resolve_adapter: () -> String
+
+      def resolve_triggers_for: (adapter: String) -> Array[trigger_resolved_row]
+
+      def adapter_opt: () -> String?
+
+      def infer_adapter_from_config: () -> String?
+
+      def primary_db_config: () -> untyped
+    end
+  end
+end

@@ -1,0 +1,93 @@
+module Arfi
+  module Commands
+    TRIGGERS_ROOT_DIR: "db/triggers"
+
+    type trigger_candidate = {
+      key: String,
+      schema: String,
+      trigger: String,
+      source: String,
+      origin: String,
+      priority: Integer,
+      path: String
+    }
+
+    type trigger_resolved_row = {
+      key: String,
+      schema: String,
+      trigger: String,
+      source: String,
+      origin: String,
+      priority: Integer,
+      path: String,
+      ?chosen: bool,
+      ?shadowed: Array[String],
+      ?shadowed_by: String?
+    }
+
+    class Triggers < Thor
+      # steep:ignore:end
+      def create: (String trigger_ref) -> void
+
+      # steep:ignore:end
+      def destroy: (String trigger_ref) -> void
+
+      # steep:ignore:end
+      def list: () -> void
+
+      private
+
+      def validate_schema_format!: () -> void
+
+      def validate_adapter_option!: () -> void
+
+      def parse_trigger_ref: (String ref) -> [String?, String]
+
+      def schema_opt: () -> String?
+
+      def validate_identifiers!: (String? schema, String trigger_name) -> void
+
+      def ensure_dirs!: (adapter: String?, schema: String?) -> void
+
+      def build_sql_trigger: (String? schema, String trigger_name, original_ref: String) -> String
+
+      def build_from_file: (String? schema, String trigger_name, original_ref: String) -> String
+
+      def write_file: (String? schema, String trigger_name, String content) -> void
+
+      def canonical_path: (String? schema, String trigger_name) -> String
+
+      def trigger_paths: (String? schema, String trigger_name) -> Array[String]
+
+      def adapter_opt: () -> String?
+
+      def infer_adapter_from_config: () -> String?
+
+      def resolve_triggers_for: (adapter: String) -> Array[trigger_resolved_row]
+
+      def collect_candidates: (glob: ::Pathname, schema: String, source: String, origin: String, priority: Integer) -> Array[trigger_candidate]
+
+      def print_table: (Array[trigger_resolved_row] rows) -> void
+
+      def rel: (::Pathname | String path) -> String
+
+      def remove_trigger_file: (String? schema, String trigger_name) -> void
+
+      def resolve_adapter: () -> String
+
+      def render_list: (Array[trigger_resolved_row] rows) -> void
+
+      def resolve_key_group: (Array[trigger_candidate] arr) -> Array[trigger_resolved_row]
+
+      def resolve_schema_name: (String? schema) -> String?
+
+      def collect_all_candidates: (::Pathname root, String adapter) -> Array[trigger_candidate]
+
+      def group_candidates_by_key: (Array[trigger_candidate] candidates) -> ::Hash[String, Array[trigger_candidate]]
+
+      def build_resolved_rows: (::Hash[String, Array[trigger_candidate]] by_key) -> Array[trigger_resolved_row]
+
+      def validate_trigger_ref!: (String ref) -> void
+    end
+  end
+end

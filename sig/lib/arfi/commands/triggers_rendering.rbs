@@ -1,0 +1,25 @@
+module Arfi
+  module Commands
+    module TriggersRendering : Arfi::Commands::Triggers
+      private
+
+      def render_list: (Array[trigger_resolved_row] rows) -> void
+
+      def print_table: (Array[trigger_resolved_row] rows) -> void
+
+      def table_columns: () -> Array[String]
+
+      def stringify_rows: (Array[trigger_resolved_row] rows) -> Array[trigger_resolved_row]
+
+      def calculate_widths: (Array[String] cols, Array[trigger_resolved_row] table) -> ::Hash[String, Integer]
+
+      def render_table_rows: (Array[trigger_resolved_row] table, Array[String] cols, ::Hash[String, Integer] widths) -> void
+
+      def resolve_key_group: (Array[trigger_candidate] arr) -> Array[trigger_resolved_row]
+
+      def all_mode_rows: (Array[trigger_candidate] arr, trigger_candidate chosen) -> Array[trigger_resolved_row]
+
+      def default_mode_row: (trigger_candidate chosen, Array[trigger_candidate] arr) -> Array[trigger_resolved_row]
+    end
+  end
+end

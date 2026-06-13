@@ -1,0 +1,23 @@
+module Arfi
+  module Commands
+    module TriggersCandidates : Arfi::Commands::Triggers
+      private
+
+      def collect_all_candidates: (::Pathname root, String adapter) -> Array[trigger_candidate]
+
+      def group_candidates_by_key: (Array[trigger_candidate] candidates) -> ::Hash[String, Array[trigger_candidate]]
+
+      def build_resolved_rows: (::Hash[String, Array[trigger_candidate]] by_key) -> Array[trigger_resolved_row]
+
+      def generic_candidates: (::Pathname root) -> Array[trigger_candidate]
+
+      def adapter_candidates: (::Pathname adapter_root, String adapter) -> Array[trigger_candidate]
+
+      def collect_postgresql_schema_candidates: (::Pathname adapter_root, String adapter) -> Array[trigger_candidate]
+
+      def collect_candidates: (glob: ::Pathname, schema: String, source: String, origin: String, priority: Integer) -> Array[trigger_candidate]
+
+      def rel: (::Pathname | String path) -> String
+    end
+  end
+end
