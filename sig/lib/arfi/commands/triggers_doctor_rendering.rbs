@@ -1,0 +1,25 @@
+module Arfi
+  module Commands
+    module TriggersDoctorRendering : Arfi::Commands::Triggers
+      private
+
+      def report_validate_results: (Array[::Hash[Symbol, String?]] results) -> void
+
+      def format_validate_result: (::Hash[Symbol, String?] result) -> ::Hash[Symbol, String]
+
+      def build_validate_rows: (Array[::Hash[Symbol, String?]] results) -> Array[::Hash[Symbol, String]]
+
+      def print_validate_table: (Array[::Hash[Symbol, String?]] results) -> void
+
+      def report_doctor_results: (Array[::Hash[Symbol, String]] results) -> void
+
+      def build_doctor_rows: (Array[::Hash[Symbol, String]] results) -> Array[::Hash[Symbol, String]]
+
+      def print_doctor_table: (Array[::Hash[Symbol, String]] results) -> void
+
+      def calculate_col_widths: (Array[String] cols, Array[::Hash[Symbol, String]] rows) -> ::Hash[String, Integer]
+
+      def print_separator: (Array[String] cols, ::Hash[String, Integer] widths) -> void
+    end
+  end
+end

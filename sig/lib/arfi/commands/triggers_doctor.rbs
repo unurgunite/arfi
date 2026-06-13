@@ -1,0 +1,33 @@
+module Arfi
+  module Commands
+    module TriggersDoctor : Arfi::Commands::Triggers
+      include TriggersDoctorRendering
+
+      private
+
+      def validate: () -> void
+
+      def doctor: () -> void
+
+      def prepare_connection: () -> ::ActiveRecord::ConnectionAdapters::AbstractAdapter
+
+      def resolve_candidates: () -> Array[::Hash[Symbol, untyped]]
+
+      def establish_connection: () -> ::ActiveRecord::ConnectionAdapters::AbstractAdapter
+
+      def raise_unless_supported_adapter: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> void
+
+      def postgresql_adapter?: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> bool
+
+      def execute_sql_safely: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, String sql) -> void
+
+      def discover_trigger_files: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> Array[String]
+
+      def validate_sql_file: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, String file) -> ::Hash[Symbol, String?]
+
+      def doctor_check_trigger: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Hash[Symbol, untyped] row) -> ::Hash[Symbol, String]
+
+      def extract_table_from_sql: (String path) -> String?
+    end
+  end
+end
