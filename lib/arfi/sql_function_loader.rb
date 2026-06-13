@@ -109,7 +109,8 @@ module Arfi
       # Get the current database config, or nil if no connection is established.
       #
       # @private
-      # @return [ActiveRecord::DatabaseConfig, nil] Current database config
+      # @raise [StandardError]
+      # @return [ActiveRecord::DatabaseConfig, nil] Current database config, or nil if no connection is established
       def current_db_config
         ActiveRecord::Base.connection_db_config # steep:ignore NoMethod
       rescue StandardError
