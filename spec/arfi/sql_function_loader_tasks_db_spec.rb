@@ -18,14 +18,6 @@ RSpec.describe Arfi::SqlFunctionLoader do
     Rake.application = nil
   end
 
-  def define_tasks(*names)
-    names.each { |n| Rake::Task.define_task(n) }
-  end
-
-  def load_arfi_tasks
-    load File.expand_path('../../lib/arfi/tasks/db.rake', __dir__)
-  end
-
   describe 'standard db tasks' do
     before do
       define_tasks('db:migrate', 'db:schema:load', 'db:setup', 'db:prepare', 'db:test:prepare')

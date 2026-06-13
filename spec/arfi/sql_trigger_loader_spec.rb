@@ -3,14 +3,6 @@
 RSpec.describe Arfi::SqlTriggerLoader, :pgsql do
   include ArfiSpec::TmpRoot
 
-  def load!
-    described_class.load!(verbose: false)
-  end
-
-  def select_value(sql)
-    ActiveRecord::Base.connection.select_value(sql)
-  end
-
   before do
     ActiveRecord::Base.connection.execute(<<~SQL)
       CREATE OR REPLACE FUNCTION public.arfi_before_insert()
@@ -26,19 +18,10 @@ RSpec.describe Arfi::SqlTriggerLoader, :pgsql do
     SQL
   end
 
-  def trigger_sql(name)
-    <<~SQL
-      CREATE TRIGGER #{name}
-        BEFORE INSERT ON users
-        FOR EACH ROW
-        EXECUTE FUNCTION public.arfi_before_insert();
-    SQL
-  end
-
   it 'loads triggers from db/triggers' do
     write_function('db/triggers/public/arfi_before_ins.sql', trigger_sql('arfi_before_ins'))
     Arfi::SqlFunctionLoader.load!(verbose: false)
-    load!
+    load_triggers!
     expect(ActiveRecord::Base.trigger_exists?('users', 'arfi_before_ins')).to be(true)
   end
 
@@ -46,7 +29,7 @@ RSpec.describe Arfi::SqlTriggerLoader, :pgsql do
     write_function('db/triggers/public/_boom.sql', 'SELECT 1/0;')
     write_function('db/triggers/public/arfi_before_ins.sql', trigger_sql('arfi_before_ins'))
     Arfi::SqlFunctionLoader.load!(verbose: false)
-    load!
+    load_triggers!
     expect(ActiveRecord::Base.trigger_exists?('users', 'arfi_before_ins')).to be(true)
   end
 
@@ -68,7 +51,7 @@ RSpec.describe Arfi::SqlTriggerLoader, :pgsql do
 
     it 'prefers adapter-specific override' do
       Arfi::SqlFunctionLoader.load!(verbose: false)
-      load!
+      load_triggers!
       expect(ActiveRecord::Base.trigger_exists?('users', 'arfi_echo')).to be(true)
     end
   end

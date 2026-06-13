@@ -14,24 +14,12 @@ RSpec.describe Arfi::SqlFunctionLoader, :pgsql do
     SQL
   end
 
-  def load!
-    described_class.load!(verbose: false)
-  end
-
-  def expect_index_creation_to_succeed
-    expect do
-      ActiveRecord::Base.connection.execute(<<~SQL)
-        CREATE INDEX idx_users_norm_email ON users (normalize_email(email));
-      SQL
-    end.not_to raise_error
-  end
-
   it 'succeeds via auto-reload when function is ARFI-managed' do
     expect_index_creation_to_succeed
   end
 
   it 'succeeds after loader provides the function' do
-    load!
+    load_functions!
     expect_index_creation_to_succeed
   end
 end

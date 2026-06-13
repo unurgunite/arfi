@@ -15,14 +15,6 @@ RSpec.describe Arfi::SqlTriggerLoader do
     Rake.application = nil
   end
 
-  def define_tasks(*names)
-    names.each { |n| Rake::Task.define_task(n) }
-  end
-
-  def load_arfi_tasks
-    load File.expand_path('../../lib/arfi/tasks/db.rake', __dir__)
-  end
-
   describe 'dynamic enhancer calls both loaders' do
     before do
       define_tasks('db:migrate:animals')

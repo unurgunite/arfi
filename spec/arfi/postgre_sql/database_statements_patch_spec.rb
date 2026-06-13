@@ -5,10 +5,6 @@ require 'rails_helper'
 RSpec.describe Arfi::PostgreSQL::DatabaseStatementsPatch, :pgsql do
   include ArfiSpec::TmpRoot
 
-  def load!
-    Arfi::SqlFunctionLoader.load!(verbose: false)
-  end
-
   before do
     write_function('db/functions/postgresql/public/arfi_auto.sql', <<~SQL)
       CREATE OR REPLACE FUNCTION arfi_auto() RETURNS int
@@ -18,7 +14,7 @@ RSpec.describe Arfi::PostgreSQL::DatabaseStatementsPatch, :pgsql do
   end
 
   it 'reloads functions and retries when a managed function is missing' do
-    load!
+    load_functions!
     val = ActiveRecord::Base.connection.select_value('SELECT arfi_auto()')
     expect(val).to eq(42)
   end
