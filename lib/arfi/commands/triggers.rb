@@ -10,6 +10,8 @@ require_relative 'triggers_creation'
 require_relative 'triggers_paths'
 require_relative 'triggers_rendering'
 require_relative 'triggers_candidates'
+require_relative 'triggers_doctor_rendering'
+require_relative 'triggers_doctor'
 
 module Arfi
   module Commands
@@ -22,6 +24,7 @@ module Arfi
       include TriggersPaths
       include TriggersRendering
       include TriggersCandidates
+      include TriggersDoctor
 
       default_task :list
 
@@ -137,6 +140,51 @@ module Arfi
         rows = resolve_triggers_for(adapter: adapter)
 
         render_list(rows)
+      end
+
+      # steep:ignore:start
+      desc(
+        'validate [--adapter=adapter] [--format=table|paths|json]',
+        "Validate SQL trigger files by running them against the database.\n" \
+        "On PostgreSQL, runs inside a transaction that is rolled back.\n" \
+        'On MySQL/Trilogy, triggers are loaded as a side effect.'
+      )
+      option :adapter, type: :string,
+                       desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      option :format, type: :string, default: 'table',
+                      desc: 'Output format: table, paths, json'
+      # steep:ignore:end
+      # Validate all SQL trigger files by executing them against the database.
+      #
+      # Delegates to {TriggersDoctor#validate}. On PostgreSQL, each file runs
+      # inside a transaction that is rolled back. On MySQL/Trilogy, DDL commits.
+      #
+      # @return [void]
+      def validate # rubocop:disable Lint/UselessMethodDefinition
+        super
+      end
+
+      # steep:ignore:start
+      desc(
+        'doctor [--adapter=adapter] [--format=table|paths|json]',
+        "Check trigger status: compare files on disk vs the database.\n" \
+        'Shows each resolved trigger as OK (exists) or MISSING (not in DB).'
+      )
+      option :adapter, type: :string,
+                       desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      option :format, type: :string, default: 'table',
+                      desc: 'Output format: table, paths, json'
+      # steep:ignore:end
+      # Compare trigger files on disk vs the database and report discrepancies.
+      #
+      # Delegates to {TriggersDoctor#doctor}. Shows each resolved trigger as OK
+      # (exists in DB) or MISSING (file on disk but not loaded).
+      #
+      # @return [void]
+      def doctor # rubocop:disable Lint/UselessMethodDefinition
+        super
       end
     end
   end
