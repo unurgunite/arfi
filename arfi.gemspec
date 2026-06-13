@@ -6,7 +6,6 @@ Gem::Specification.new do |spec|
   spec.name = 'arfi'
   spec.version = Arfi::VERSION
   spec.authors = ['unurgunite']
-  spec.email = ['senpaiguru1488@gmail.com']
 
   spec.summary = 'ActiveRecord Functions Integration.'
   spec.description = <<~STR
