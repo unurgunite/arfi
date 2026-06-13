@@ -4,6 +4,8 @@ module Arfi
   module Commands
     # Validation and doctor helpers for {Arfi::Commands::Functions}.
     module FunctionsDoctor
+      include FunctionsDoctorRendering
+
       private
 
       # Validate all SQL function files by trying to execute them against a database connection.
@@ -12,15 +14,10 @@ module Arfi
       # leaving the database state unchanged. On MySQL/Trilogy, DDL auto-commits,
       # so the functions will be loaded as a side effect of validation.
       #
+      # @private
       # @return [void]
       def validate
-        validate_schema_format!
-        validate_adapter_option!
-
-        resolve_adapter
-        conn = establish_connection
-
-        raise_unless_supported_adapter(conn)
+        conn = prepare_connection
 
         files = discover_function_files(conn)
         if files.empty?
@@ -38,25 +35,40 @@ module Arfi
       # - OK: function exists in the database
       # - MISSING: function file exists on disk but is not in the database
       #
+      # @private
       # @return [void]
       def doctor
+        conn = prepare_connection
+        resolved = resolve_candidates
+        results = resolved.map { |row| doctor_check_function(conn, row) }
+        report_doctor_results(results)
+      end
+
+      # Run shared setup steps for validate/doctor commands.
+      #
+      # @private
+      # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter]
+      def prepare_connection
         validate_schema_format!
         validate_adapter_option!
-
-        adapter = resolve_adapter
         conn = establish_connection
-
         raise_unless_supported_adapter(conn)
+        conn
+      end
 
+      # Resolve function candidates from disk for doctor.
+      #
+      # @private
+      # @raise [Arfi::Errors::NoFunctionsDir]
+      # @return [Array<Hash{Symbol => Object}>]
+      def resolve_candidates
         root = Rails.root.join(ROOT_DIR)
         raise Arfi::Errors::NoFunctionsDir unless root.directory?
 
+        adapter = resolve_adapter
         candidates = collect_all_candidates(root, adapter)
         by_key = group_candidates_by_key(candidates)
-        resolved = build_resolved_rows(by_key)
-
-        results = resolved.map { |row| doctor_check_function(conn, row) }
-        report_doctor_results(results)
+        build_resolved_rows(by_key)
       end
 
       # Establish a database connection for validation/doctor operations.
@@ -103,11 +115,26 @@ module Arfi
       # @private
       # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
       # @param [String] file path to the SQL file
+      # @raise [StandardError]
       # @return [Hash] result with :file, :status, and optionally :error keys
       def validate_sql_file(conn, file)
         sql = File.read(file.to_s).strip
         return { file: file, status: 'SKIP', error: 'File is empty' } if sql.empty?
 
+        execute_sql_safely(conn, sql)
+        { file: file, status: 'OK' }
+      rescue StandardError => e
+        { file: file, status: 'FAIL', error: e.message }
+      end
+
+      # Execute SQL safely inside a rollback transaction on PostgreSQL, or directly otherwise.
+      #
+      # @private
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
+      # @param [String] sql SQL to execute
+      # @raise [ActiveRecord::Rollback]
+      # @return [void]
+      def execute_sql_safely(conn, sql)
         if postgresql_adapter?(conn)
           conn.transaction do
             conn.execute(sql)
@@ -116,10 +143,6 @@ module Arfi
         else
           conn.execute(sql)
         end
-
-        { file: file, status: 'OK' }
-      rescue StandardError => e
-        { file: file, status: 'FAIL', error: e.message }
       end
 
       # Check whether the connection is PostgreSQL.
@@ -135,116 +158,16 @@ module Arfi
       #
       # @private
       # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
-      # @param [Hash<Symbol, Object>] row resolved function row from candidates
+      # @param [Hash{Symbol => Object}] row resolved function row from candidates
+      # @param [Object] _conn Param documentation.
       # @return [Hash] result with :function, :schema, :status, :path keys
       def doctor_check_function(_conn, row)
         function_name = row[:function]
         schema = row[:schema]
         path = row[:path]
-
         exists = ActiveRecord::Base.function_exists?(function_name)
 
         { function: function_name, schema: schema, status: exists ? 'OK' : 'MISSING', path: path }
-      end
-
-      # Render validation results in the selected output format.
-      #
-      # @private
-      # @param [Array<Hash>] results
-      # @return [void]
-      def report_validate_results(results)
-        case options[:format].to_s
-        when 'json'
-          puts JSON.pretty_generate(results.map { |r| format_validate_result(r) })
-        when 'paths'
-          results.each { |r| puts "#{rel(r[:file])}  #{r[:status]}" }
-        else
-          print_validate_table(results)
-        end
-      end
-
-      # Format a validation result for JSON output.
-      #
-      # @private
-      # @param [Hash] r
-      # @return [Hash]
-      def format_validate_result(r)
-        { file: rel(r[:file]), status: r[:status], error: r[:error] }.compact
-      end
-
-      # Print validation results as an ASCII table.
-      #
-      # @private
-      # @param [Array<Hash>] results
-      # @return [void]
-      def print_validate_table(results)
-        cols = %w[file status error]
-        rows = results.map do |r|
-          { file: rel(r[:file]), status: r[:status], error: r[:error] || '' }
-        end
-        widths = calculate_col_widths(cols, rows)
-        print_separator(cols, widths)
-        rows.each do |r|
-          puts cols.map { |c| r[c.to_sym].to_s.ljust(widths[c]) }.join('  ')
-        end
-      end
-
-      # Render doctor results in the selected output format.
-      #
-      # @private
-      # @param [Array<Hash>] results
-      # @return [void]
-      def report_doctor_results(results)
-        case options[:format].to_s
-        when 'json'
-          puts JSON.pretty_generate(results)
-        when 'paths'
-          results.each { |r| puts "#{rel(r[:path])}  #{r[:status]}" }
-        else
-          print_doctor_table(results)
-        end
-      end
-
-      # Print doctor results as an ASCII table.
-      #
-      # @private
-      # @param [Array<Hash>] results
-      # @return [void]
-      def print_doctor_table(results)
-        cols = %w[function schema status path]
-        rows = results.map do |r|
-          { function: r[:function], schema: r[:schema], status: r[:status], path: rel(r[:path]) }
-        end
-        widths = calculate_col_widths(cols, rows)
-        print_separator(cols, widths)
-        rows.each do |r|
-          puts cols.map { |c| r[c.to_sym].to_s.ljust(widths[c]) }.join('  ')
-        end
-      end
-
-      # Calculate column widths for a table.
-      #
-      # @private
-      # @param [Array<String>] cols column names
-      # @param [Array<Hash>] rows
-      # @return [Hash<String, Integer>]
-      def calculate_col_widths(cols, rows)
-        widths = {}
-        cols.each do |c|
-          widths[c] = ([c.length] + rows.map { |r| r[c.to_sym].to_s.length }).max
-        end
-        widths
-      end
-
-      # Print table header and separator line.
-      #
-      # @private
-      # @param [Array<String>] cols
-      # @param [Hash<String, Integer>] widths
-      # @return [void]
-      def print_separator(cols, widths)
-        puts cols.map { |c| c.ljust(widths[c]) }.join('  ')
-        puts cols.map { |c| '-' * widths[c] }.join('  ')
       end
     end
   end

@@ -10,6 +10,7 @@ require_relative 'functions_creation'
 require_relative 'functions_paths'
 require_relative 'functions_rendering'
 require_relative 'functions_candidates'
+require_relative 'functions_doctor_rendering'
 require_relative 'functions_doctor'
 
 module Arfi
@@ -145,6 +146,9 @@ module Arfi
       # On MySQL/Trilogy, DDL auto-commits, so functions are loaded as a side effect.
       #
       # @return [void]
+      def validate # rubocop:disable Lint/UselessMethodDefinition
+        super
+      end
 
       # steep:ignore:start
       desc(
@@ -161,6 +165,9 @@ module Arfi
       # Compare functions on disk vs the database and report discrepancies.
       #
       # @return [void]
+      def doctor # rubocop:disable Lint/UselessMethodDefinition
+        super
+      end
     end
   end
 end

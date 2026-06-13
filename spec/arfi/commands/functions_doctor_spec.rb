@@ -55,14 +55,9 @@ RSpec.describe Arfi::Commands::Functions do
 
   describe 'doctor' do
     it 'reports OK for functions that exist in the database', :pgsql do
-      write_function('db/functions/public/existing_fn.sql', <<~SQL)
-        CREATE OR REPLACE FUNCTION existing_fn() RETURNS INT LANGUAGE SQL AS $$ SELECT 1; $$;
-      SQL
-
-      ActiveRecord::Base.connection.execute(<<~SQL)
-        CREATE OR REPLACE FUNCTION existing_fn() RETURNS INT LANGUAGE SQL AS $$ SELECT 1; $$;
-      SQL
-
+      fn = 'CREATE OR REPLACE FUNCTION existing_fn() RETURNS INT LANGUAGE SQL AS $$ SELECT 1; $$;'
+      write_function('db/functions/public/existing_fn.sql', fn)
+      ActiveRecord::Base.connection.execute(fn)
       expect { described_class.start(%w[doctor --adapter=postgresql --format=paths]) }
         .to output(/OK/).to_stdout
     end
