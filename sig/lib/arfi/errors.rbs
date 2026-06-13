@@ -17,5 +17,15 @@ module Arfi
 
       def initialize: (?::String message) -> void
     end
+
+    class NoTriggersDir < StandardError
+      @message: string
+
+      def initialize: (?::String message) -> void
+    end
+
+    class FunctionNotFound < StandardError
+      def initialize: (?::String? message) -> void
+    end
   end
 end

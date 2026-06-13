@@ -41,6 +41,15 @@ module Arfi
       # steep:ignore:end
       def list: () -> void
 
+      # steep:ignore:end
+      def validate: () -> void
+
+      # steep:ignore:end
+      def doctor: () -> void
+
+      # steep:ignore:end
+      def display_source: (String function_ref) -> void
+
       private
 
       def validate_schema_format!: () -> void

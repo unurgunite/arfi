@@ -5,6 +5,8 @@ module ActiveRecord
     def self.clear_active_connections!: () -> void
 
     def self.configurations: () -> ::ActiveRecord::DatabaseConfigurations
+
+    def self.connection_db_config: () -> ::ActiveRecord::DatabaseConfigurations::DatabaseConfig
   end
 
   class DatabaseConfigurations::DatabaseConfig

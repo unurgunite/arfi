@@ -30,6 +30,11 @@ ArfiSpec::PgSQLDB.connect!
 ArfiSpec::MySQLDB.connect! if defined?(ArfiSpec::MySQLDB)
 
 RSpec.configure do |config|
+  config.include ArfiSpec::DbHelpers
+  config.include ArfiSpec::FunctionLoaderHelpers
+  config.include ArfiSpec::TriggerLoaderHelpers
+  config.include ArfiSpec::RakeTaskHelpers
+
   config.filter_run_excluding :pgsql unless ArfiSpec::PgSQLDB.available?
   config.filter_run_excluding :mysql unless ArfiSpec::MySQLDB.available?
 

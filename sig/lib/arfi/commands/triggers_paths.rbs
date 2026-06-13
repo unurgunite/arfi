@@ -1,0 +1,21 @@
+module Arfi
+  module Commands
+    module TriggersPaths : Arfi::Commands::Triggers
+      private
+
+      def canonical_path: (String? schema, String trigger_name) -> String
+
+      def trigger_paths: (String? schema, String trigger_name) -> Array[String]
+
+      def generic_canonical_path: (::Pathname root, String? schema, String trigger_name) -> String
+
+      def adapter_canonical_path: (::Pathname root, String? schema, String trigger_name) -> String
+
+      def generic_trigger_paths: (::Pathname root, String trigger_name) -> Array[String]
+
+      def postgresql_trigger_paths: (::Pathname root, String? schema, String trigger_name) -> Array[String]
+
+      def mysql_trigger_paths: (::Pathname root, String trigger_name) -> Array[String]
+    end
+  end
+end

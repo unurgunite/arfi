@@ -10,6 +10,9 @@ require_relative 'functions_creation'
 require_relative 'functions_paths'
 require_relative 'functions_rendering'
 require_relative 'functions_candidates'
+require_relative 'functions_doctor_rendering'
+require_relative 'functions_doctor'
+require_relative 'functions_show'
 
 module Arfi
   module Commands
@@ -25,6 +28,8 @@ module Arfi
       include FunctionsPaths
       include FunctionsRendering
       include FunctionsCandidates
+      include FunctionsDoctor
+      include FunctionsShow
 
       default_task :list
 
@@ -32,6 +37,7 @@ module Arfi
       map %w[ls] => :list
       map %w[rm delete del] => :destroy
       map %w[new add] => :create
+      map %w[show cat source] => :display_source
 
       # steep:ignore:start
       desc(
@@ -122,6 +128,67 @@ module Arfi
         rows = resolve_functions_for(adapter: adapter)
 
         render_list(rows)
+      end
+
+      # steep:ignore:start
+      desc(
+        'validate [--adapter=adapter] [--format=table|paths|json]',
+        "Validate SQL function files by running them against the database.\n" \
+        "On PostgreSQL, runs inside a transaction that is rolled back.\n" \
+        'On MySQL/Trilogy, functions are loaded as a side effect.'
+      )
+      option :adapter, type: :string,
+                       desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      option :format, type: :string, default: 'table',
+                      desc: 'Output format: table, paths, json'
+      # steep:ignore:end
+      # Validate all SQL function files by executing them against the database.
+      #
+      # On PostgreSQL, each file runs inside a transaction that is rolled back.
+      # On MySQL/Trilogy, DDL auto-commits, so functions are loaded as a side effect.
+      #
+      # @return [void]
+      def validate # rubocop:disable Lint/UselessMethodDefinition
+        super
+      end
+
+      # steep:ignore:start
+      desc(
+        'doctor [--adapter=adapter] [--format=table|paths|json]',
+        "Check function status: compare files on disk vs the database.\n" \
+        'Shows each resolved function as OK (exists) or MISSING (not in DB).'
+      )
+      option :adapter, type: :string,
+                       desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      option :format, type: :string, default: 'table',
+                      desc: 'Output format: table, paths, json'
+      # steep:ignore:end
+      # Compare functions on disk vs the database and report discrepancies.
+      #
+      # @return [void]
+      def doctor # rubocop:disable Lint/UselessMethodDefinition
+        super
+      end
+
+      # steep:ignore:start
+      desc(
+        'show FUNCTION_NAME [--schema=schema]',
+        "Display the SQL source of a function from the database.\n" \
+        'Uses pg_get_functiondef on PostgreSQL, SHOW CREATE FUNCTION on MySQL/Trilogy.'
+      )
+      option :schema, type: :string, banner: 'schema',
+                      desc: "PostgreSQL schema name (alternative to 'schema.function')."
+      # steep:ignore:end
+      # Display the SQL source of a function from the database.
+      #
+      # Delegates to {FunctionsShow#display_source}.
+      #
+      # @param [String] function_ref Function name (optionally schema-qualified)
+      # @return [void]
+      def display_source(function_ref) # rubocop:disable Lint/UselessMethodDefinition
+        super
       end
     end
   end

@@ -38,5 +38,21 @@ module Arfi
         super
       end
     end
+
+    # Raised when there is no `db/triggers` directory in the Rails project.
+    class NoTriggersDir < StandardError
+      # Initialize a new NoTriggersDir error with an optional custom message.
+      #
+      # @param [String] message Error message
+      # @return [void]
+      def initialize(message =
+                       'There is no such directory: db/triggers. Did you run `bundle exec arfi triggers create`?')
+        @message = message
+        super
+      end
+    end
+
+    # Raised when a function is not found in the database.
+    class FunctionNotFound < StandardError; end
   end
 end
