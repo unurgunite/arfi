@@ -21,7 +21,7 @@ module Arfi
 
       def resolve_adapter: () -> String
 
-      def resolve_triggers_for: (adapter: String) -> Array[::Hash[Symbol, untyped]]
+      def resolve_triggers_for: (adapter: String) -> Array[trigger_resolved_row]
 
       def adapter_opt: () -> String?
 

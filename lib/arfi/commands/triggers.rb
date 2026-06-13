@@ -60,6 +60,10 @@ module Arfi
       option :force, type: :boolean, default: false,
                      desc: 'Overwrite existing trigger file if it already exists.'
       # steep:ignore:end
+      # Method documentation.
+      #
+      # @param [String] trigger_ref Param documentation.
+      # @return [void]
       def create(trigger_ref)
         validate_schema_format!
         validate_adapter_option!
@@ -84,6 +88,10 @@ module Arfi
                        desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
                        banner: 'adapter'
       # steep:ignore:end
+      # Method documentation.
+      #
+      # @param [String] trigger_ref Param documentation.
+      # @return [void]
       def destroy(trigger_ref)
         validate_schema_format!
         validate_adapter_option!
@@ -111,6 +119,9 @@ module Arfi
       option :all, type: :boolean, default: false,
                    desc: 'Show all candidates (including overridden ones), not just the effective set.'
       # steep:ignore:end
+      # Method documentation.
+      #
+      # @return [void]
       def list
         validate_schema_format!
         validate_adapter_option!

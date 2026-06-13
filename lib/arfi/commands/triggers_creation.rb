@@ -6,6 +6,13 @@ module Arfi
     module TriggersCreation
       private
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] adapter Param documentation.
+      # @param [String?] schema Param documentation.
+      # @raise [Arfi::Errors::NoTriggersDir]
+      # @return [void]
       def ensure_dirs!(adapter:, schema:)
         root = Rails.root.join(TRIGGERS_ROOT_DIR)
         raise Arfi::Errors::NoTriggersDir unless root.directory?
@@ -22,6 +29,14 @@ module Arfi
         FileUtils.mkdir_p(adapter_root.join(sch))
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] trigger_name Param documentation.
+      # @param [String] original_ref Param documentation.
+      # @raise [StandardError]
+      # @return [String]
       def build_sql_trigger(schema, trigger_name, original_ref:)
         return build_from_file(schema, trigger_name, original_ref: original_ref) if options[:template]
 
@@ -35,12 +50,26 @@ module Arfi
         end
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] trigger_name Param documentation.
+      # @param [String] original_ref Param documentation.
+      # @return [String]
       def build_from_file(schema, trigger_name, original_ref:)
         schema_name = resolve_schema_name(schema)
         qualified_name = schema_name ? "#{schema_name}.#{trigger_name}" : trigger_name
         evaluate_template(trigger_name, schema_name, qualified_name, original_ref)
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] trigger_name Param documentation.
+      # @param [String] content Param documentation.
+      # @return [void]
       def write_file(schema, trigger_name, content)
         path = canonical_path(schema, trigger_name)
         if File.exist?(path) && !options[:force]
@@ -51,6 +80,12 @@ module Arfi
         puts "Created: #{rel(path)}"
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] trigger_name Param documentation.
+      # @return [void]
       def remove_trigger_file(schema, trigger_name)
         candidates = trigger_paths(schema, trigger_name)
         path = candidates.find { |p| File.exist?(p) }
@@ -62,9 +97,17 @@ module Arfi
         puts "Deleted: #{rel(path)}"
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String] trigger_name Param documentation.
+      # @param [String?] schema_name Param documentation.
+      # @param [String] qualified_name Param documentation.
+      # @param [String] original_ref Param documentation.
+      # @return [Object]
       def evaluate_template(trigger_name, schema_name, qualified_name, original_ref)
         tpl = File.read(options[:template])
-        RubyVM::InstructionSequence.compile(<<~RUBY).eval
+        RubyVM::InstructionSequence.compile(<<~RUBY).eval # steep:ignore
           index_name     = #{trigger_name.inspect}
           trigger_name   = #{trigger_name.inspect}
           schema_name    = #{schema_name.inspect}
@@ -74,6 +117,12 @@ module Arfi
         RUBY
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String?] schema Param documentation.
+      # @param [String] trigger_name Param documentation.
+      # @return [String]
       def build_postgresql_trigger_skeleton(schema, trigger_name)
         sch = schema || DEFAULT_SCHEMA
         fn_name = options[:function] || "#{trigger_name}_fn"
@@ -81,6 +130,13 @@ module Arfi
         "-- #{note}\n#{pg_trigger_sql(trigger_name, sch, fn_name)}"
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] trigger_name Param documentation.
+      # @param [Object] sch Param documentation.
+      # @param [Object] fn_name Param documentation.
+      # @return [String]
       def pg_trigger_sql(trigger_name, sch, fn_name)
         <<~SQL
           CREATE TRIGGER #{trigger_name}
@@ -90,22 +146,43 @@ module Arfi
         SQL
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @return [Object]
       def pg_table
         options[:table] || 'table_name'
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @return [Object]
       def pg_timing
         options[:timing] || 'BEFORE'
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @return [Object]
       def pg_for_each
         options[:'for-each'] || 'ROW'
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @return [Object]
       def pg_trigger_events
         Array(options[:event]).then { _1.empty? ? %w[INSERT] : _1 }.map(&:upcase).join(' OR ')
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [String] trigger_name Param documentation.
+      # @return [String]
       def build_mysql_trigger_skeleton(trigger_name)
         table = options[:table] || 'table_name'
         timing = options[:timing] || 'BEFORE'
@@ -114,6 +191,14 @@ module Arfi
         "#{note}\n#{mysql_trigger_sql(trigger_name, timing, event, table)}"
       end
 
+      # Method documentation.
+      #
+      # @private
+      # @param [Object] trigger_name Param documentation.
+      # @param [Object] timing Param documentation.
+      # @param [Object] event Param documentation.
+      # @param [Object] table Param documentation.
+      # @return [String]
       def mysql_trigger_sql(trigger_name, timing, event, table)
         <<~SQL
           CREATE TRIGGER #{trigger_name}

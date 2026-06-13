@@ -18,6 +18,18 @@ module Arfi
       def build_postgresql_trigger_skeleton: (String? schema, String trigger_name) -> String
 
       def build_mysql_trigger_skeleton: (String trigger_name) -> String
+
+      def pg_trigger_sql: (String trigger_name, String sch, String fn_name) -> String
+
+      def pg_table: () -> String
+
+      def pg_timing: () -> String
+
+      def pg_for_each: () -> String
+
+      def pg_trigger_events: () -> String
+
+      def mysql_trigger_sql: (String trigger_name, String timing, String event, String table) -> String
     end
   end
 end
