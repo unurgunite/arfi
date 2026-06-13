@@ -97,6 +97,7 @@ module ActiveRecord
     #
     # @param [String] function_name Function name to retrieve
     # @param [String, nil] schema Schema name (PostgreSQL only)
+    # @raise [ActiveRecord::AdapterNotFound]
     # @return [String, nil] The function source SQL, or nil if not found
     def self.function_source(function_name, schema: nil)
       case connection.class.name
@@ -131,6 +132,7 @@ module ActiveRecord
     # Retrieve function source from MySQL/MariaDB via SHOW CREATE FUNCTION.
     #
     # @param [String] function_name Function name to retrieve
+    # @raise [ActiveRecord::StatementInvalid]
     # @return [String, nil] The function source SQL, or nil if not found
     def self.mysql_function_source(function_name)
       row = connection.select_one("SHOW CREATE FUNCTION #{connection.quote_table_name(function_name)}")

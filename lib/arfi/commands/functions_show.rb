@@ -8,7 +8,9 @@ module Arfi
 
       # Display the SQL source of a function from the database.
       #
+      # @private
       # @param [String] function_ref Function name (optionally schema-qualified)
+      # @raise [Arfi::Errors::FunctionNotFound]
       # @return [void]
       def display_source(function_ref)
         schema, function_name = parse_function_ref(function_ref)
