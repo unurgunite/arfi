@@ -12,6 +12,7 @@ require_relative 'functions_rendering'
 require_relative 'functions_candidates'
 require_relative 'functions_doctor_rendering'
 require_relative 'functions_doctor'
+require_relative 'functions_show'
 
 module Arfi
   module Commands
@@ -28,6 +29,7 @@ module Arfi
       include FunctionsRendering
       include FunctionsCandidates
       include FunctionsDoctor
+      include FunctionsShow
 
       default_task :list
 
@@ -35,6 +37,7 @@ module Arfi
       map %w[ls] => :list
       map %w[rm delete del] => :destroy
       map %w[new add] => :create
+      map %w[show cat source] => :display_source
 
       # steep:ignore:start
       desc(
@@ -166,6 +169,25 @@ module Arfi
       #
       # @return [void]
       def doctor # rubocop:disable Lint/UselessMethodDefinition
+        super
+      end
+
+      # steep:ignore:start
+      desc(
+        'show FUNCTION_NAME [--schema=schema]',
+        "Display the SQL source of a function from the database.\n" \
+        'Uses pg_get_functiondef on PostgreSQL, SHOW CREATE FUNCTION on MySQL/Trilogy.'
+      )
+      option :schema, type: :string, banner: 'schema',
+                      desc: "PostgreSQL schema name (alternative to 'schema.function')."
+      # steep:ignore:end
+      # Display the SQL source of a function from the database.
+      #
+      # Delegates to {FunctionsShow#display_source}.
+      #
+      # @param [String] function_ref Function name (optionally schema-qualified)
+      # @return [void]
+      def display_source(function_ref) # rubocop:disable Lint/UselessMethodDefinition
         super
       end
     end

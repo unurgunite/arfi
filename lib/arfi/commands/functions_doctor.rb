@@ -157,9 +157,8 @@ module Arfi
       # Check whether a resolved function exists in the database.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] _conn
       # @param [Hash{Symbol => Object}] row resolved function row from candidates
-      # @param [Object] _conn Param documentation.
       # @return [Hash] result with :function, :schema, :status, :path keys
       def doctor_check_function(_conn, row)
         function_name = row[:function]

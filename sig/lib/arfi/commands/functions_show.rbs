@@ -1,0 +1,15 @@
+module Arfi
+  module Commands
+    module FunctionsShow : Arfi::Commands::Functions
+      private
+
+      def display_source: (String function_ref) -> void
+
+      def prepare_connection: () -> ::ActiveRecord::ConnectionAdapters::AbstractAdapter
+
+      def establish_connection: () -> ::ActiveRecord::ConnectionAdapters::AbstractAdapter
+
+      def raise_unless_supported_adapter: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> void
+    end
+  end
+end
