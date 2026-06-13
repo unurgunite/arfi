@@ -6,10 +6,10 @@ module Arfi
     module TriggersRendering
       private
 
-      # Method documentation.
+      # Renders trigger list in the selected output format (paths, json, or table).
       #
       # @private
-      # @param [Array<Hash<Symbol, Object>>] rows Param documentation.
+      # @param [Array<Hash<Symbol, Object>>] rows resolved trigger rows
       # @return [void]
       def render_list(rows)
         case options[:format].to_s
@@ -22,10 +22,10 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Prints a formatted table of resolved trigger rows to stdout.
       #
       # @private
-      # @param [Array<Arfi::Commands::resolved_row>] rows Param documentation.
+      # @param [Array<Arfi::Commands::resolved_row>] rows
       # @return [void]
       def print_table(rows)
         cols = table_columns
@@ -36,7 +36,9 @@ module Arfi
         render_table_rows(table, cols, widths)
       end
 
-      # Method documentation.
+      # Returns the column headers for the table view.
+      #
+      # Includes extra columns when --all is set.
       #
       # @private
       # @return [Array<String>]
@@ -48,10 +50,10 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Converts row values to strings for table display (path, chosen, shadowed).
       #
       # @private
-      # @param [Array<Arfi::Commands::resolved_row>] rows Param documentation.
+      # @param [Array<Arfi::Commands::resolved_row>] rows
       # @return [Array<Arfi::Commands::resolved_row>]
       def stringify_rows(rows)
         rows.map do |r|
@@ -63,11 +65,11 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Calculates column widths based on header and row values.
       #
       # @private
-      # @param [Array<String>] cols Param documentation.
-      # @param [Array<Arfi::Commands::resolved_row>] table Param documentation.
+      # @param [Array<String>] cols column names
+      # @param [Array<Arfi::Commands::resolved_row>] table stringified rows
       # @return [Hash<String, Integer>]
       def calculate_widths(cols, table)
         widths = {} # steep:ignore
@@ -77,12 +79,12 @@ module Arfi
         widths
       end
 
-      # Method documentation.
+      # Prints each table row with proper column padding.
       #
       # @private
-      # @param [Array<Arfi::Commands::resolved_row>] table Param documentation.
-      # @param [Array<String>] cols Param documentation.
-      # @param [Hash<String, Integer>] widths Param documentation.
+      # @param [Array<Arfi::Commands::resolved_row>] table
+      # @param [Array<String>] cols
+      # @param [Hash<String, Integer>] widths
       # @return [void]
       def render_table_rows(table, cols, widths)
         table.each do |r|
@@ -90,10 +92,12 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Resolves a group of candidates (same key) into display rows.
+      #
+      # Chooses the highest-priority candidate; shows shadowed candidates with --all.
       #
       # @private
-      # @param [Array<Arfi::Commands::candidate>] arr Param documentation.
+      # @param [Array<Arfi::Commands::candidate>] arr candidates for one key
       # @return [Array<Hash<Symbol, Object>>]
       def resolve_key_group(arr)
         chosen = arr.max_by { |c| c[:priority] }
@@ -106,11 +110,11 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Builds display rows for --all mode, including shadowed candidates.
       #
       # @private
-      # @param [Array<Arfi::Commands::candidate>] arr Param documentation.
-      # @param [Arfi::Commands::candidate] chosen Param documentation.
+      # @param [Array<Arfi::Commands::candidate>] arr
+      # @param [Arfi::Commands::candidate] chosen highest-priority candidate
       # @return [Array<Hash<Symbol, Object>>]
       def all_mode_rows(arr, chosen) # steep:ignore
         chosen_path = chosen[:path]
@@ -122,11 +126,11 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Builds a single display row for default mode with shadowed paths list.
       #
       # @private
-      # @param [Arfi::Commands::candidate] chosen Param documentation.
-      # @param [Array<Arfi::Commands::candidate>] arr Param documentation.
+      # @param [Arfi::Commands::candidate] chosen
+      # @param [Array<Arfi::Commands::candidate>] arr all candidates for the key
       # @return [Array<Hash<Symbol, Object>>]
       def default_mode_row(chosen, arr) # steep:ignore
         shadowed = (arr - [chosen])

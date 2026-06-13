@@ -6,12 +6,14 @@ module Arfi
     module TriggersPaths
       private
 
-      # Method documentation.
+      # Returns the canonical write path for a trigger SQL file.
+      #
+      # Dispatches to generic or adapter-specific path builder based on adapter_opt.
       #
       # @private
-      # @param [String?] schema Param documentation.
-      # @param [String] trigger_name Param documentation.
-      # @return [String]
+      # @param [String?] schema
+      # @param [String] trigger_name
+      # @return [String] full file path
       def canonical_path(schema, trigger_name)
         root = Rails.root.join(TRIGGERS_ROOT_DIR)
         if adapter_opt.nil?
@@ -21,11 +23,13 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Returns an ordered list of paths to search for an existing trigger SQL file.
+      #
+      # Used by destroy to find files in legacy or new locations.
       #
       # @private
-      # @param [String?] schema Param documentation.
-      # @param [String] trigger_name Param documentation.
+      # @param [String?] schema
+      # @param [String] trigger_name
       # @raise [Arfi::Errors::AdapterNotSupported]
       # @return [Array<String>]
       def trigger_paths(schema, trigger_name)
@@ -39,13 +43,15 @@ module Arfi
         out.uniq
       end
 
-      # Method documentation.
+      # Returns the canonical write path for generic (no adapter) triggers.
+      #
+      # Only supports the DEFAULT_SCHEMA (public).
       #
       # @private
-      # @param [Pathname] root Param documentation.
-      # @param [String?] schema Param documentation.
-      # @param [String] trigger_name Param documentation.
-      # @raise [ArgumentError]
+      # @param [Pathname] root db/triggers
+      # @param [String?] schema
+      # @param [String] trigger_name
+      # @raise [ArgumentError] if schema is not DEFAULT_SCHEMA
       # @return [String]
       def generic_canonical_path(root, schema, trigger_name)
         sch = schema || DEFAULT_SCHEMA
@@ -56,13 +62,15 @@ module Arfi
         root.join(DEFAULT_SCHEMA, "#{trigger_name}.sql").to_s
       end
 
-      # Method documentation.
+      # Returns the canonical write path for adapter-specific triggers.
+      #
+      # PostgreSQL supports schema-qualified paths; MySQL/Trilogy only use public.
       #
       # @private
-      # @param [Pathname] root Param documentation.
-      # @param [String?] schema Param documentation.
-      # @param [String] trigger_name Param documentation.
-      # @raise [ArgumentError]
+      # @param [Pathname] root db/triggers
+      # @param [String?] schema
+      # @param [String] trigger_name
+      # @raise [ArgumentError] if schema is given for MySQL/Trilogy
       # @raise [Arfi::Errors::AdapterNotSupported]
       # @return [String]
       def adapter_canonical_path(root, schema, trigger_name)
@@ -78,11 +86,11 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Search paths for generic (no adapter) triggers, legacy then explicit.
       #
       # @private
-      # @param [Pathname] root Param documentation.
-      # @param [String] trigger_name Param documentation.
+      # @param [Pathname] root db/triggers
+      # @param [String] trigger_name
       # @return [Array<String>]
       def generic_trigger_paths(root, trigger_name)
         [
@@ -91,12 +99,12 @@ module Arfi
         ]
       end
 
-      # Method documentation.
+      # Search paths for PostgreSQL triggers, from most to least specific.
       #
       # @private
-      # @param [Pathname] root Param documentation.
-      # @param [String?] schema Param documentation.
-      # @param [String] trigger_name Param documentation.
+      # @param [Pathname] root db/triggers
+      # @param [String?] schema
+      # @param [String] trigger_name
       # @return [Array<String>]
       def postgresql_trigger_paths(root, schema, trigger_name)
         sch = schema || DEFAULT_SCHEMA
@@ -110,11 +118,11 @@ module Arfi
         out
       end
 
-      # Method documentation.
+      # Search paths for MySQL/Trilogy triggers, from most to least specific.
       #
       # @private
-      # @param [Pathname] root Param documentation.
-      # @param [String] trigger_name Param documentation.
+      # @param [Pathname] root db/triggers
+      # @param [String] trigger_name
       # @return [Array<String>]
       def mysql_trigger_paths(root, trigger_name)
         [

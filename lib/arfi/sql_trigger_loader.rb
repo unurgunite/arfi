@@ -6,12 +6,15 @@ module Arfi
   # Mirror of {Arfi::SqlFunctionLoader} for triggers with `db/triggers` paths.
   class SqlTriggerLoader
     class << self
-      # Method documentation.
+      # Loads all trigger SQL files into the database for the current adapter.
       #
-      # @param [String?] task_name Param documentation.
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter?] connection Param documentation.
-      # @param [Boolean] clear_active_connections Param documentation.
-      # @param [Boolean] verbose Param documentation.
+      # Handles multi-DB setups by iterating all configurations when no specific
+      # connection or task_name is given.
+      #
+      # @param [String?] task_name Rake task name for logging
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter?] connection optional specific connection
+      # @param [Boolean] clear_active_connections whether to clear connections after loading
+      # @param [Boolean] verbose whether to log each loaded file
       # @return [void]
       def load!(task_name: nil, connection: nil, clear_active_connections: true, verbose: true)
         task_short = task_name ? task_name[/([^:]+$)/] : nil
@@ -30,7 +33,7 @@ module Arfi
 
       private
 
-      # Method documentation.
+      # Returns true if more than one database configuration exists for the current env.
       #
       # @private
       # @return [Boolean]
@@ -38,10 +41,10 @@ module Arfi
         ActiveRecord::Base.configurations.configurations.count { _1.env_name == Rails.env } > 1
       end
 
-      # Method documentation.
+      # Raises unless the connection adapter is one of the supported types.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Param documentation.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
       # @raise [Arfi::Errors::AdapterNotSupported]
       # @return [void]
       def raise_unless_supported_adapter(conn) # rubocop:disable SortedMethodsByCall/Waterfall
@@ -54,11 +57,13 @@ module Arfi
         raise Arfi::Errors::AdapterNotSupported unless allowed.include?(conn.class.name)
       end
 
-      # Method documentation.
+      # Iterates all database configs for the current env and loads triggers into each.
+      #
+      # Restores the original connection after loading.
       #
       # @private
-      # @param [Boolean] verbose Param documentation.
-      # @param [String?] task_name Param documentation.
+      # @param [Boolean] verbose
+      # @param [String?] task_name
       # @return [void]
       def populate_multiple_db(verbose:, task_name: nil)
         original = current_db_config
@@ -70,7 +75,7 @@ module Arfi
         ActiveRecord::Base.establish_connection(original) if original
       end
 
-      # Method documentation.
+      # Returns the default ActiveRecord connection, handling the lease_connection API change.
       #
       # @private
       # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter]
@@ -82,24 +87,23 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Returns the current database config object, or nil on error.
       #
       # @private
       # @raise [StandardError]
-      # @return [Object]
-      # @return [nil] if StandardError
+      # @return [Object] ActiveRecord::DatabaseConfigurations::HashConfig or similar
       def current_db_config
         ActiveRecord::Base.connection_db_config
       rescue StandardError
         nil
       end
 
-      # Method documentation.
+      # Loads all SQL trigger files for a single connection.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Param documentation.
-      # @param [Boolean] verbose Param documentation.
-      # @param [String?] task_name Param documentation.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
+      # @param [Boolean] verbose
+      # @param [String?] task_name
       # @return [void]
       def populate_db(conn, verbose:, task_name:)
         files = sql_files(conn)
@@ -111,10 +115,12 @@ module Arfi
         files.each { |file| load_sql_file(conn, file, verbose, task_name) }
       end
 
-      # Method documentation.
+      # Clears all active connections unless suppressed by caller.
+      #
+      # Handles both old and new ActiveRecord connection handler APIs.
       #
       # @private
-      # @param [Boolean] clear Param documentation.
+      # @param [Boolean] clear whether to actually clear
       # @return [void]
       def clear_active_connections_if_needed(clear)
         return unless clear && defined?(ActiveRecord::Base)
@@ -127,14 +133,16 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Executes a single SQL file against the given connection.
+      #
+      # Re-raises with the file path appended to the error message on failure.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Param documentation.
-      # @param [Pathname, String] file Param documentation.
-      # @param [Boolean] verbose Param documentation.
-      # @param [String?] task_name Param documentation.
-      # @raise [StandardError]
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
+      # @param [Pathname, String] file path to the SQL file
+      # @param [Boolean] verbose
+      # @param [String?] task_name
+      # @raise [StandardError] on SQL execution failure
       # @return [void]
       def load_sql_file(conn, file, verbose, task_name)
         sql = File.read(file.to_s).strip
@@ -150,12 +158,12 @@ module Arfi
         log_sql_load(conn, file, task_name)
       end
 
-      # Method documentation.
+      # Logs a successful trigger load to Rails logger or stdout.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Param documentation.
-      # @param [Pathname, String] file Param documentation.
-      # @param [String?] task_name Param documentation.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
+      # @param [Pathname, String] file path to the loaded SQL file
+      # @param [String?] task_name
       # @return [void]
       def log_sql_load(conn, file, task_name)
         label = "[ARFI] Loaded trigger: #{File.basename(file)} into #{safe_db_env(conn)} #{safe_db_name(conn)}"
@@ -163,37 +171,35 @@ module Arfi
         log(conn, label)
       end
 
-      # Method documentation.
+      # Safely returns the database environment name, or empty string on error.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Param documentation.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
       # @raise [StandardError]
       # @return [String]
-      # @return [String] if StandardError
       def safe_db_env(conn)
         conn.pool&.db_config&.env_name.to_s
       rescue StandardError
         ''
       end
 
-      # Method documentation.
+      # Safely returns the database config name, or empty string on error.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Param documentation.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
       # @raise [StandardError]
       # @return [String]
-      # @return [String] if StandardError
       def safe_db_name(conn)
         conn.pool&.db_config&.name.to_s
       rescue StandardError
         ''
       end
 
-      # Method documentation.
+      # Logs a message via Rails logger or stdout.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] _conn Param documentation.
-      # @param [String] msg Param documentation.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] _conn (unused, kept for interface consistency)
+      # @param [String] msg message to log
       # @return [void]
       def log(_conn, msg)
         if defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
@@ -203,11 +209,13 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Discovers and returns SQL trigger files for the given connection's adapter.
+      #
+      # Merges generic and adapter-specific files, deduplicating by priority.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Param documentation.
-      # @return [Array<String>]
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
+      # @return [Array<String>] sorted list of file paths
       def sql_files(conn)
         root = Rails.root.join('db', 'triggers')
         return [] unless root.directory?
@@ -223,11 +231,11 @@ module Arfi
         finalize_items(generic + collect_adapter_sql_files(conn, adapter_root))
       end
 
-      # Method documentation.
+      # Collects adapter-specific SQL files, dispatching by connection class.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Param documentation.
-      # @param [Pathname] adapter_root Param documentation.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
+      # @param [Pathname] adapter_root db/triggers/<adapter>
       # @raise [Arfi::Errors::AdapterNotSupported]
       # @return [Array<Arfi::sql_file_item>]
       def collect_adapter_sql_files(conn, adapter_root)
@@ -241,10 +249,10 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Collects PostgreSQL SQL files, including schema-specific subdirectories.
       #
       # @private
-      # @param [Pathname] adapter_root Param documentation.
+      # @param [Pathname] adapter_root db/triggers/postgresql
       # @return [Array<Arfi::sql_file_item>]
       def collect_postgresql_sql_files(adapter_root)
         items = collect_adapter_public_sql_files(adapter_root)
@@ -262,10 +270,10 @@ module Arfi
         items
       end
 
-      # Method documentation.
+      # Collects adapter SQL files from the root and public/ subdirectory.
       #
       # @private
-      # @param [Pathname] adapter_root Param documentation.
+      # @param [Pathname] adapter_root db/triggers/<adapter>
       # @return [Array<Arfi::sql_file_item>]
       def collect_adapter_public_sql_files(adapter_root)
         items = [] # steep:ignore
@@ -274,12 +282,14 @@ module Arfi
         items
       end
 
-      # Method documentation.
+      # Collects SQL file items from a glob pattern.
+      #
+      # Skips files starting with underscore (disabled).
       #
       # @private
-      # @param [Pathname, String] glob Param documentation.
-      # @param [String] schema Param documentation.
-      # @param [Integer] priority Param documentation.
+      # @param [Pathname, String] glob glob pattern
+      # @param [String] schema schema name
+      # @param [Integer] priority priority for deduplication
       # @return [Array<Arfi::sql_file_item>]
       def collect_sql(glob:, schema:, priority:)
         Dir.glob(glob.to_s).filter_map do |path|
@@ -290,11 +300,13 @@ module Arfi
         end
       end
 
-      # Method documentation.
+      # Deduplicates items by key (schema/base), keeping the highest-priority each.
+      #
+      # Returns sorted file paths.
       #
       # @private
-      # @param [Array<Arfi::sql_file_item>] items Param documentation.
-      # @return [Array<String>]
+      # @param [Array<Arfi::sql_file_item>] items all discovered items
+      # @return [Array<String>] sorted, deduplicated file paths
       def finalize_items(items)
         chosen = {} # steep:ignore
 
@@ -309,11 +321,11 @@ module Arfi
               .map { |item| item[:path] }
       end
 
-      # Method documentation.
+      # Returns the adapter-specific subdirectory under db/triggers for the given connection.
       #
       # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn Param documentation.
-      # @param [Pathname] root Param documentation.
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
+      # @param [Pathname] root db/triggers
       # @raise [Arfi::Errors::AdapterNotSupported]
       # @return [Pathname]
       def adapter_root_for(conn, root)

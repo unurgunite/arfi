@@ -6,7 +6,7 @@ module Arfi
     module TriggersHelpers
       private
 
-      # Method documentation.
+      # Raises unless schema format is :ruby (ARFI requires schema.rb).
       #
       # @private
       # @raise [Arfi::Errors::InvalidSchemaFormat]
@@ -21,7 +21,7 @@ module Arfi
         raise Arfi::Errors::InvalidSchemaFormat unless fmt == :ruby
       end
 
-      # Method documentation.
+      # Raises unless --adapter value (if given) is in the supported list.
       #
       # @private
       # @raise [Arfi::Errors::AdapterNotSupported]
@@ -32,10 +32,12 @@ module Arfi
         raise Arfi::Errors::AdapterNotSupported unless ADAPTERS.map(&:to_s).include?(opt)
       end
 
-      # Method documentation.
+      # Parses a trigger reference string into [schema, trigger_name].
+      #
+      # Supports "schema.name" format and/or --schema option.
       #
       # @private
-      # @param [String] ref Param documentation.
+      # @param [String] ref e.g. "public.my_trigger" or "my_trigger"
       # @return [[ ::String?, ::String ]]
       def parse_trigger_ref(ref)
         validate_trigger_ref!(ref)
@@ -49,12 +51,14 @@ module Arfi
         [schema, parsed_fn || '']
       end
 
-      # Method documentation.
+      # Validates that schema and trigger names match the allowed identifier pattern.
+      #
+      # Also rejects schema-qualified triggers for non-PostgreSQL adapters.
       #
       # @private
-      # @param [String?] schema Param documentation.
-      # @param [String] trigger_name Param documentation.
-      # @raise [ArgumentError]
+      # @param [String?] schema
+      # @param [String] trigger_name
+      # @raise [ArgumentError] if names are invalid or schema not allowed for adapter
       # @return [void]
       def validate_identifiers!(schema, trigger_name)
         raise ArgumentError, "Invalid trigger name: #{trigger_name.inspect}" unless IDENT.match?(trigger_name)
@@ -65,11 +69,11 @@ module Arfi
         raise ArgumentError, 'Schema-qualified triggers are only supported for PostgreSQL.'
       end
 
-      # Method documentation.
+      # Validates the raw trigger reference string (non-empty, no path separators).
       #
       # @private
-      # @param [String] ref Param documentation.
-      # @raise [ArgumentError]
+      # @param [String] ref
+      # @raise [ArgumentError] if ref is empty or contains path separators
       # @return [void]
       def validate_trigger_ref!(ref)
         raise ArgumentError, "Invalid trigger name: #{ref.inspect}" unless ref.is_a?(String)
@@ -79,10 +83,10 @@ module Arfi
         raise ArgumentError, "Invalid trigger name: #{ref.inspect}" if bad
       end
 
-      # Method documentation.
+      # Raises if schema is provided both via "schema.name" and --schema option.
       #
       # @private
-      # @param [String?] parsed_schema Param documentation.
+      # @param [String?] parsed_schema schema extracted from the ref string
       # @raise [ArgumentError]
       # @return [void]
       def check_schema_conflict!(parsed_schema)
@@ -91,20 +95,20 @@ module Arfi
         raise ArgumentError, "Schema specified twice (both 'schema.trigger' and --schema). Pick one."
       end
 
-      # Method documentation.
+      # Resolves the schema name: returns schema or DEFAULT_SCHEMA for PostgreSQL/generic, nil for MySQL.
       #
       # @private
-      # @param [String?] schema Param documentation.
+      # @param [String?] schema
       # @return [String?]
       def resolve_schema_name(schema)
         adapter = adapter_opt
         adapter.nil? || adapter == 'postgresql' ? (schema || DEFAULT_SCHEMA) : nil
       end
 
-      # Method documentation.
+      # Resolves the database adapter: --adapter option, inferred from Rails config, or raises.
       #
       # @private
-      # @raise [ArgumentError]
+      # @raise [ArgumentError] if adapter cannot be determined
       # @return [String]
       def resolve_adapter
         adapter_opt || infer_adapter_from_config || raise(
@@ -113,12 +117,12 @@ module Arfi
         )
       end
 
-      # Method documentation.
+      # Collects, groups, and resolves all candidate SQL files for the given adapter.
       #
       # @private
-      # @param [String] adapter Param documentation.
-      # @raise [Arfi::Errors::NoTriggersDir]
-      # @return [Array<Hash<Symbol, Object>>]
+      # @param [String] adapter database adapter name
+      # @raise [Arfi::Errors::NoTriggersDir] if db/triggers does not exist
+      # @return [Array<Hash<Symbol, Object>>] resolved display rows
       def resolve_triggers_for(adapter:)
         root = Rails.root.join(TRIGGERS_ROOT_DIR)
         raise Arfi::Errors::NoTriggersDir unless root.directory?
@@ -128,7 +132,7 @@ module Arfi
         build_resolved_rows(by_key)
       end
 
-      # Method documentation.
+      # Returns the --adapter CLI option value as a string, or nil.
       #
       # @private
       # @return [String?]
@@ -136,7 +140,7 @@ module Arfi
         options[:adapter]&.to_s
       end
 
-      # Method documentation.
+      # Returns the --schema CLI option value as a string, or nil.
       #
       # @private
       # @return [String?]
@@ -144,12 +148,11 @@ module Arfi
         options[:schema]&.to_s
       end
 
-      # Method documentation.
+      # Infers the database adapter name from the primary Rails database config.
       #
       # @private
-      # @raise [StandardError]
+      # @raise [StandardError] if config lookup fails
       # @return [String?]
-      # @return [nil] if StandardError
       def infer_adapter_from_config
         cfg = primary_db_config
         h = cfg&.configuration_hash
@@ -159,10 +162,10 @@ module Arfi
         nil
       end
 
-      # Method documentation.
+      # Returns the primary (or first) database config for the current Rails env.
       #
       # @private
-      # @return [Object]
+      # @return [Object] ActiveRecord::DatabaseConfigurations::HashConfig or similar
       def primary_db_config
         cfgs =
           if ActiveRecord::Base.respond_to?(:configurations) && ActiveRecord::Base.configurations
