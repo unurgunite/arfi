@@ -1,0 +1,29 @@
+module Arfi
+  module Commands
+    module FunctionsCreation : Arfi::Commands::Functions
+      DEFAULT_SCHEMA: "public"
+
+      ROOT_DIR: "db/functions"
+
+      ADAPTERS: ::Array[:postgresql | :mysql | :trilogy]
+
+      private
+
+      def ensure_dirs!: (adapter: String?, schema: String?) -> void
+
+      def write_file: (String? schema, String function_name, String content) -> void
+
+      def remove_function_file: (String? schema, String function_name) -> void
+
+      def build_postgresql_skeleton: (String? schema, String function_name) -> String
+
+      def build_mysql_skeleton: (String function_name) -> String
+
+      def evaluate_template: (String function_name, String? schema_name, String qualified_name, String original_ref) -> untyped
+
+      def build_sql_function: (String? schema, String function_name, original_ref: String) -> String
+
+      def build_from_file: (String? schema, String function_name, original_ref: String) -> String
+    end
+  end
+end

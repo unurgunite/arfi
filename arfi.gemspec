@@ -6,15 +6,15 @@ Gem::Specification.new do |spec|
   spec.name = 'arfi'
   spec.version = Arfi::VERSION
   spec.authors = ['unurgunite']
-  spec.email = ['senpaiguru1488@gmail.com']
 
-  spec.summary = 'ActiveRecord Functional Indexes.'
+  spec.summary = 'ActiveRecord Functions Integration.'
   spec.description = <<~STR
-    ARFI — ActiveRecord Functional Indexes. Provides the ability to create and maintain functions that can be used as indexes, as well as in other parts of the project without switching to structure.sql.
+    ARFI — ActiveRecord Functions Integration. Provides the ability to create and maintain SQL functions that
+    can be used across the project without switching to structure.sql.
   STR
   spec.homepage = 'https://github.com/unurgunite/arfi'
   spec.license = 'MIT'
-  spec.required_ruby_version = '>= 3.1'
+  spec.required_ruby_version = '>= 2.7'
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
 
@@ -38,10 +38,16 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rails', '>= 6.0'
   spec.add_dependency 'rake', '>= 12.0'
   spec.add_dependency 'thor', '~> 1.3'
+  spec.add_development_dependency 'docscribe', '~> 1.4'
+  spec.add_development_dependency 'dotenv'
   spec.add_development_dependency 'irb', '>= 1.15'
-  spec.add_development_dependency 'repl_type_completor', '>= 0.1.11'
+  spec.add_development_dependency 'mysql2'
+  spec.add_development_dependency 'pg'
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'rubocop', '>= 1.21'
+  spec.add_development_dependency 'rubocop-performance'
+  spec.add_development_dependency 'rubocop-rspec'
+  spec.add_development_dependency 'rubocop-sorted_methods_by_call', '~> 1.2'
   spec.add_development_dependency 'steep', '~> 1.3'
   spec.add_development_dependency 'yard', '~> 0.9.37'
 

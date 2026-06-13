@@ -1,0 +1,99 @@
+module Arfi
+  module Commands
+    ADAPTERS: ::Array[:postgresql | :mysql | :trilogy]
+
+    ROOT_DIR: "db/functions"
+
+    DEFAULT_SCHEMA: "public"
+
+    IDENT: ::Regexp
+
+    type candidate = {
+      key: String,
+      schema: String,
+      function: String,
+      source: String,
+      origin: String,
+      priority: Integer,
+      path: String
+    }
+
+    type resolved_row = {
+      key: String,
+      schema: String,
+      function: String,
+      source: String,
+      origin: String,
+      priority: Integer,
+      path: String,
+      ?chosen: bool,
+      ?shadowed: Array[String],
+      ?shadowed_by: String?
+    }
+
+    class Functions < Thor
+      # steep:ignore:end
+      def create: (String function_ref) -> void
+
+      # steep:ignore:end
+      def destroy: (String function_ref) -> void
+
+      # steep:ignore:end
+      def list: () -> void
+
+      private
+
+      def validate_schema_format!: () -> void
+
+      def validate_adapter_option!: () -> void
+
+      def parse_function_ref: (String ref) -> [String?, String]
+
+      def schema_opt: () -> String?
+
+      def validate_identifiers!: (String? schema, String function_name) -> void
+
+      def ensure_dirs!: (adapter: String?, schema: String?) -> void
+
+      def build_sql_function: (String? schema, String function_name, original_ref: String) -> String
+
+      def build_from_file: (String? schema, String function_name, original_ref: String) -> String
+
+      def write_file: (String? schema, String function_name, String content) -> void
+
+      def canonical_path: (String? schema, String function_name) -> String
+
+      def function_paths: (String? schema, String function_name) -> Array[String]
+
+      def adapter_opt: () -> String?
+
+      def infer_adapter_from_config: () -> String?
+
+      def resolve_functions_for: (adapter: String) -> Array[::Hash[Symbol, untyped]]
+
+      def collect_candidates: (glob: ::Pathname, schema: String, source: String, origin: String, priority: Integer) -> Array[candidate]
+
+      def print_table: (Array[resolved_row] rows) -> void
+
+      def rel: (::Pathname | String path) -> String
+
+      def remove_function_file: (String? schema, String function_name) -> void
+
+      def resolve_adapter: () -> String
+
+      def render_list: (Array[::Hash[Symbol, untyped]] rows) -> void
+
+      def resolve_key_group: (Array[candidate] arr) -> Array[::Hash[Symbol, untyped]]
+
+      def resolve_schema_name: (String? schema) -> String?
+
+      def collect_all_candidates: (::Pathname root, String adapter) -> Array[candidate]
+
+      def group_candidates_by_key: (Array[candidate] candidates) -> ::Hash[String, Array[candidate]]
+
+      def build_resolved_rows: (::Hash[String, Array[candidate]] by_key) -> Array[::Hash[Symbol, untyped]]
+
+      def validate_function_ref!: (String ref) -> void
+    end
+  end
+end

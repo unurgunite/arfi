@@ -1,38 +1,80 @@
 # frozen_string_literal: true
 
 require 'rake'
+require 'active_record'
 require 'arfi/sql_function_loader'
 
 namespace :_db do
   task :arfi_enhance do
-    Arfi::SqlFunctionLoader.load!
+    # For non-suffixed tasks (db:migrate / db:prepare etc),
+    # loader will populate all DBs when multi-db and task_name is nil.
+    Arfi::SqlFunctionLoader.load!(verbose: true)
   end
 end
 
 Rake::Task.define_task(:environment) unless Rake::Task.task_defined?(:environment)
 
-# Enhancing single db tasks
-%w[db:migrate db:schema:load db:setup].each do |task|
+# Enhance common single-db tasks (and multi-db "default" tasks)
+%w[
+  db:migrate
+  db:schema:load
+  db:setup
+  db:prepare
+  db:test:prepare
+].each do |task|
   Rake::Task[task].enhance(['_db:arfi_enhance']) if Rake::Task.task_defined?(task)
 end
 
-# We remove user defined keys in database.yml and use only the ones about RDBMS connections.
-# Here we try to find tasks like db:migrate:your_db_name and enhance them as well as tasks for single db connections.
-rdbms_configs = Rails.configuration.database_configuration[Rails.env].select { |_k, v| v.is_a?(Hash) }.keys
-possible_tasks = Rake::Task.tasks.select do |task|
-  task.name.match?(/^(db:migrate:|db:schema:load:|db:setup:|db:prepare:|db:test:prepare:)(\w+)$/)
-end
-possible_tasks = possible_tasks.select do |task|
-  rdbms_configs.any? { |n| task.name.include?(n) }
-end
-
-# In general, this is a small trick due to the fact that Rake does not allow you to view parent tasks from a task that
-# was called for enhancing. Moreover, the utility does not provide for passing parameters to the called task.
-# To get around this limitation, we dynamically create a task with the name we need, and then pass this name as
-# an argument to the method.
-possible_tasks.each do |task|
+def define_arfi_enhance_for(task, db_name)
   Rake::Task.define_task("_db:arfi_enhance:#{task.name}") do
-    Arfi::SqlFunctionLoader.load!(task_name: task.name)
+    run_arfi_loader_for(task, arfi_db_config_for(db_name))
   end
   task.enhance(["_db:arfi_enhance:#{task.name}"])
+end
+
+def run_arfi_loader_for(task, config_hash)
+  if config_hash
+    run_with_connection_switch(task, config_hash)
+  else
+    run_arfi_loader(task)
+  end
+end
+
+def run_with_connection_switch(task, config_hash)
+  original = current_db_config
+  ActiveRecord::Base.establish_connection(config_hash)
+  run_arfi_loader(task)
+ensure
+  ActiveRecord::Base.establish_connection(original) if original
+end
+
+def current_db_config
+  ActiveRecord::Base.connection_db_config
+rescue StandardError
+  nil
+end
+
+def run_arfi_loader(task)
+  Arfi::SqlFunctionLoader.load!(
+    task_name: task.name,
+    connection: ActiveRecord::Base.connection,
+    verbose: true
+  )
+end
+
+def arfi_db_config_for(name)
+  return unless ActiveRecord::Base.respond_to?(:configurations) && ActiveRecord::Base.configurations
+
+  list = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env, name: name)
+  cfg = Array(list).first
+  cfg&.configuration_hash
+end
+
+# Enhance suffixed tasks: db:migrate:<db>, db:schema:load:<db>, etc.
+pattern = /^(db:migrate:|db:schema:load:|db:setup:|db:prepare:|db:test:prepare:)([^:]+)$/
+possible_tasks = Rake::Task.tasks.select { |t| t.name.match?(pattern) }
+
+possible_tasks.each do |task|
+  db_name = task.name.match(pattern)[2]
+  define_arfi_enhance_for(task, db_name)
 end

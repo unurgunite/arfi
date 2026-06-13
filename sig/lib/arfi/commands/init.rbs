@@ -1,0 +1,22 @@
+module Arfi
+  module Commands
+    class Init < Thor
+      ADAPTERS: ::Array[:postgresql | :mysql]
+
+      ROOT_DIR: "db/functions"
+
+      DEFAULT_SCHEMA: "public"
+
+      # steep:ignore:end
+      def create: () -> void
+
+      private
+
+      def validate_schema_format!: () -> void
+
+      def create_base_dirs: () -> void
+
+      def create_adapter_dirs: () -> void
+    end
+  end
+end

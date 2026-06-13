@@ -1,0 +1,3 @@
+class Object
+  def arfi_db_config_for: (String name) -> Hash[Symbol | String, String | Integer | bool | nil]?
+end

@@ -1,0 +1,41 @@
+module Arfi
+  module Commands
+    module FunctionsHelpers : Arfi::Commands::Functions
+      ADAPTERS: ::Array[:postgresql | :mysql | :trilogy]
+
+      IDENT: ::Regexp
+
+      DEFAULT_SCHEMA: "public"
+
+      ROOT_DIR: "db/functions"
+
+      private
+
+      def validate_schema_format!: () -> void
+
+      def validate_adapter_option!: () -> void
+
+      def parse_function_ref: (String ref) -> [String?, String]
+
+      def validate_identifiers!: (String? schema, String function_name) -> void
+
+      def validate_function_ref!: (String ref) -> void
+
+      def check_schema_conflict!: (String? parsed_schema) -> void
+
+      def resolve_schema_name: (String? schema) -> String?
+
+      def resolve_adapter: () -> String
+
+      def resolve_functions_for: (adapter: String) -> Array[::Hash[Symbol, untyped]]
+
+      def adapter_opt: () -> String?
+
+      def infer_adapter_from_config: () -> String?
+
+      def schema_opt: () -> String?
+
+      def primary_db_config: () -> untyped
+    end
+  end
+end
