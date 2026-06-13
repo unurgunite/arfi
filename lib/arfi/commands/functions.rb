@@ -145,9 +145,6 @@ module Arfi
       # On MySQL/Trilogy, DDL auto-commits, so functions are loaded as a side effect.
       #
       # @return [void]
-      def validate
-        super
-      end
 
       # steep:ignore:start
       desc(
@@ -164,9 +161,6 @@ module Arfi
       # Compare functions on disk vs the database and report discrepancies.
       #
       # @return [void]
-      def doctor
-        super
-      end
     end
   end
 end

@@ -17,7 +17,7 @@ module Arfi
         validate_schema_format!
         validate_adapter_option!
 
-        adapter = resolve_adapter
+        resolve_adapter
         conn = establish_connection
 
         raise_unless_supported_adapter(conn)
@@ -59,8 +59,6 @@ module Arfi
         report_doctor_results(results)
       end
 
-      private
-
       # Establish a database connection for validation/doctor operations.
       #
       # @private
@@ -87,15 +85,6 @@ module Arfi
         ].freeze
 
         raise Arfi::Errors::AdapterNotSupported unless allowed.include?(conn.class.name)
-      end
-
-      # Check whether the connection is PostgreSQL.
-      #
-      # @private
-      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
-      # @return [Boolean]
-      def postgresql_adapter?(conn)
-        conn.class.name == 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
       end
 
       # Discover the effective set of SQL function files for the given connection.
@@ -131,6 +120,15 @@ module Arfi
         { file: file, status: 'OK' }
       rescue StandardError => e
         { file: file, status: 'FAIL', error: e.message }
+      end
+
+      # Check whether the connection is PostgreSQL.
+      #
+      # @private
+      # @param [ActiveRecord::ConnectionAdapters::AbstractAdapter] conn
+      # @return [Boolean]
+      def postgresql_adapter?(conn)
+        conn.instance_of?(::ActiveRecord::ConnectionAdapters::PostgreSQLAdapter)
       end
 
       # Check whether a resolved function exists in the database.
