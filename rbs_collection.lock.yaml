@@ -413,6 +413,10 @@ gems:
     revision: d07edeb13c53de1c65b2bede98a720ac52d497a2
     remote: https://github.com/ruby/gem_rbs_collection.git
     repo_dir: gems
+- name: rubocop-sorted_methods_by_call
+  version: 1.2.3
+  source:
+    type: rubygems
 - name: securerandom
   version: '0'
   source:

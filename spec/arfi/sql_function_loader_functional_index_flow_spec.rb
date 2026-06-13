@@ -23,7 +23,7 @@ RSpec.describe Arfi::SqlFunctionLoader, :pgsql do
       ActiveRecord::Base.connection.execute(<<~SQL)
         CREATE INDEX idx_users_norm_email ON users (normalize_email(email));
       SQL
-    end.not_to raise_error(ActiveRecord::StatementInvalid)
+    end.not_to raise_error
   end
 
   it 'succeeds via auto-reload when function is ARFI-managed' do

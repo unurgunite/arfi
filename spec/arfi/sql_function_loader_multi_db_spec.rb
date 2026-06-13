@@ -52,4 +52,36 @@ RSpec.describe Arfi::SqlFunctionLoader, :pgsql do
       expect(ActiveRecord::Base.connection.select_value('SELECT arfi_multi()')).to eq('arfi_animals')
     end
   end
+
+  def with_multi_db_configs
+    old = ActiveRecord::Base.configurations
+    ActiveRecord::Base.configurations = ActiveRecord::DatabaseConfigurations.new(db_configs)
+    yield
+  ensure
+    ActiveRecord::Base.configurations = old
+  end
+
+  it 'restores the original connection config after multi-db loading' do
+    with_multi_db_configs do
+      original = ActiveRecord::Base.connection_db_config.name
+      described_class.load!(verbose: false)
+      expect(ActiveRecord::Base.connection_db_config.name).to eq(original)
+    end
+  end
+
+  it 'leaves the original connection functional after multi-db loading' do
+    with_multi_db_configs do
+      ActiveRecord::Base.connection.select_value('SELECT 1')
+      described_class.load!(verbose: false)
+      expect(ActiveRecord::Base.connection.select_value('SELECT 1')).to eq(1)
+    end
+  end
+
+  it 'skips clear_active_connections when disabled' do
+    with_multi_db_configs do
+      allow(ActiveRecord::Base.connection_handler).to receive(:clear_active_connections!)
+      described_class.load!(verbose: false, clear_active_connections: false)
+      expect(ActiveRecord::Base.connection_handler).not_to have_received(:clear_active_connections!)
+    end
+  end
 end

@@ -35,6 +35,10 @@ Demo project: https://github.com/unurgunite/poc_arfi_72
         * [Function creation](#function-creation)
         * [Function destroy](#function-destroy)
         * [Additional help](#additional-help)
+    * [Architecture](#architecture)
+        * [Entry points](#entry-points)
+        * [Decision flow](#decision-flow)
+        * [Key design points](#key-design-points)
     * [Demo](#demo)
     * [Library features](#library-features)
     * [TODO](#todo)
@@ -150,6 +154,84 @@ bundle exec arfi f_idx destroy function_name
 ### Additional help
 
 Run `bundle exec arfi` for additional help.
+
+## Architecture
+
+ARFI loads SQL function files into your database(s) during common Rails DB tasks. The flow depends on the entry point, database configuration, and adapter.
+
+### Entry points
+
+| Entry point                 | Description                                        |
+|-----------------------------|----------------------------------------------------|
+| `db:migrate` / `db:prepare` | Non-suffixed Rake tasks -> `_db:arfi_enhance`      |
+| `db:migrate:animals`        | Suffixed Rake task -> `run_with_connection_switch` |
+| Runtime retry               | `PG::UndefinedFunction` -> auto-reload             |
+| Direct call                 | `SqlFunctionLoader.load!` from anywhere            |
+
+### Decision flow
+
+```mermaid
+flowchart TD
+    A(["SqlFunctionLoader.load!"]) --> B{"connection<br>passed?"}
+    B -->|"Yes"| C["Use passed connection"]
+    B -->|"No"| D{"multi_db?<br>AND<br>task_name nil?"}
+
+    D -->|"No"| E["populate_db<br>(default_connection)"]
+    D -->|"Yes"| F["populate_multiple_db"]
+
+    F --> F1["Save original connection config"]
+    F1 --> F2["For each DB config:"]
+    F2 --> F3["establish_connection(config)"]
+    F3 --> F4["populate_db(conn)"]
+    F4 --> F2
+    F2 --> F5["Restore original connection config"]
+
+    C --> G["Check adapter support"]
+    E --> G
+    F5 --> G
+
+    G --> H["Collect SQL files"]
+    H --> I["db/functions/public/*.sql<br>(generic, priority 1-2)"]
+    H --> J["db/functions/{pg,mysql}/**/*.sql<br>(adapter-specific, priority 8-10)"]
+
+    I --> K["Override resolution:<br>higher priority wins"]
+    J --> K
+    K --> L["Ignore _prefixed files"]
+    L --> M["Execute each SQL file"]
+
+    M --> N{"clear_active_connections?"}
+    N -->|"Yes"| O["connection_handler<br>.clear_active_connections!"]
+    N -->|"No"| P["Skip cleanup"]
+
+    subgraph Entry["Entry Points"]
+        Q1["Rake: db:migrate"]
+        Q2["Rake: db:migrate:animals"]
+        Q3["Runtime: PG::UndefinedFunction"]
+        Q4["Direct call"]
+    end
+
+    Q1 --> R1["_db:arfi_enhance<br>load!(task_name: nil)"]
+    R1 --> A
+
+    Q2 --> R2["_db:arfi_enhance:db:migrate:animals"]
+    R2 --> R3["run_with_connection_switch"]
+    R3 --> R4["Save original config"]
+    R4 --> R5["establish_connection(animals)"]
+    R5 --> A
+    R5 --> R6["Restore original config"]
+
+    Q3 --> R7["arfi_try_reload_and_retry?"]
+    R7 --> R8["load!(task_name: 'arfi:runtime',<br>connection: self,<br>clear_active_connections: false)"]
+    R8 --> A
+```
+
+### Key design points
+
+- **Single-DB (default)**: loads functions into one connection, one `populate_db` call.
+- **Multi-DB**: `populate_multiple_db` iterates over all configs for the current environment, loading functions into each. The original connection is saved before the loop and restored afterwards, matching the pattern used in `run_with_connection_switch`.
+- **Suffixed tasks** (`db:migrate:animals`): switch to the named database, load functions, then restore the original connection.
+- **Runtime retry**: triggered only for `PG::UndefinedFunction`, loads functions on the same connection without clearing other active connections.
+- **File override**: adapter-specific files take priority over generic files. The highest priority file wins per schema+filename key.
 
 ## Demo
 
