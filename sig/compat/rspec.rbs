@@ -1,0 +1,11 @@
+# RSpec RBS stubs for ARFI matchers DSL
+module RSpec
+  module Matchers
+    def self.define: (Symbol name) { (?) [self: Matcher] -> void } -> void
+  end
+
+  class Matcher
+    def match: { (untyped actual) -> boolish } -> void
+    def chain: (Symbol name) { (untyped) -> void } -> void
+  end
+end
