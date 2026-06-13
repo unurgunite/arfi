@@ -10,6 +10,7 @@ require_relative 'functions_creation'
 require_relative 'functions_paths'
 require_relative 'functions_rendering'
 require_relative 'functions_candidates'
+require_relative 'functions_doctor'
 
 module Arfi
   module Commands
@@ -25,6 +26,7 @@ module Arfi
       include FunctionsPaths
       include FunctionsRendering
       include FunctionsCandidates
+      include FunctionsDoctor
 
       default_task :list
 
@@ -122,6 +124,48 @@ module Arfi
         rows = resolve_functions_for(adapter: adapter)
 
         render_list(rows)
+      end
+
+      # steep:ignore:start
+      desc(
+        'validate [--adapter=adapter] [--format=table|paths|json]',
+        "Validate SQL function files by running them against the database.\n" \
+        "On PostgreSQL, runs inside a transaction that is rolled back.\n" \
+        'On MySQL/Trilogy, functions are loaded as a side effect.'
+      )
+      option :adapter, type: :string,
+                       desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      option :format, type: :string, default: 'table',
+                      desc: 'Output format: table, paths, json'
+      # steep:ignore:end
+      # Validate all SQL function files by executing them against the database.
+      #
+      # On PostgreSQL, each file runs inside a transaction that is rolled back.
+      # On MySQL/Trilogy, DDL auto-commits, so functions are loaded as a side effect.
+      #
+      # @return [void]
+      def validate
+        super
+      end
+
+      # steep:ignore:start
+      desc(
+        'doctor [--adapter=adapter] [--format=table|paths|json]',
+        "Check function status: compare files on disk vs the database.\n" \
+        'Shows each resolved function as OK (exists) or MISSING (not in DB).'
+      )
+      option :adapter, type: :string,
+                       desc: "Specify database adapter. Available adapters: #{ADAPTERS.join(', ')}",
+                       banner: 'adapter'
+      option :format, type: :string, default: 'table',
+                      desc: 'Output format: table, paths, json'
+      # steep:ignore:end
+      # Compare functions on disk vs the database and report discrepancies.
+      #
+      # @return [void]
+      def doctor
+        super
       end
     end
   end

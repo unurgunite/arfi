@@ -1,0 +1,33 @@
+module Arfi
+  module Commands
+    module FunctionsDoctor : Arfi::Commands::Functions
+      private
+
+      def establish_connection: () -> ::ActiveRecord::ConnectionAdapters::AbstractAdapter
+
+      def raise_unless_supported_adapter: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> void
+
+      def postgresql_adapter?: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> bool
+
+      def discover_function_files: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> Array[String]
+
+      def validate_sql_file: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, String file) -> ::Hash[Symbol, String?]
+
+      def doctor_check_function: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Hash[Symbol, untyped] row) -> ::Hash[Symbol, String]
+
+      def report_validate_results: (Array[::Hash[Symbol, String?]] results) -> void
+
+      def format_validate_result: (::Hash[Symbol, String?] r) -> ::Hash[Symbol, String?]
+
+      def print_validate_table: (Array[::Hash[Symbol, String?]] results) -> void
+
+      def report_doctor_results: (Array[::Hash[Symbol, String]] results) -> void
+
+      def print_doctor_table: (Array[::Hash[Symbol, String]] results) -> void
+
+      def calculate_col_widths: (Array[String] cols, Array[::Hash[Symbol, String]] rows) -> ::Hash[String, Integer]
+
+      def print_separator: (Array[String] cols, ::Hash[String, Integer] widths) -> void
+    end
+  end
+end
