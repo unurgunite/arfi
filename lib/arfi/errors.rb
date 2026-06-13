@@ -51,5 +51,8 @@ module Arfi
         super
       end
     end
+
+    # Raised when a function is not found in the database.
+    class FunctionNotFound < StandardError; end
   end
 end

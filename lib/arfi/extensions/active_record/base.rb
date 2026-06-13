@@ -90,5 +90,53 @@ module ActiveRecord
         LIMIT 1;
       SQL
     end
+
+    # Retrieve the SQL source of a function from the database.
+    #
+    # Dispatches to the correct adapter method.
+    #
+    # @param [String] function_name Function name to retrieve
+    # @param [String, nil] schema Schema name (PostgreSQL only)
+    # @return [String, nil] The function source SQL, or nil if not found
+    def self.function_source(function_name, schema: nil)
+      case connection.class.name
+      when 'ActiveRecord::ConnectionAdapters::PostgreSQLAdapter'
+        pg_function_source(function_name, schema: schema)
+      when 'ActiveRecord::ConnectionAdapters::Mysql2Adapter',
+          'ActiveRecord::ConnectionAdapters::TrilogyAdapter'
+        mysql_function_source(function_name)
+      else
+        raise ActiveRecord::AdapterNotFound, "adapter #{connection.class.name} is not supported"
+      end
+    end
+
+    # Retrieve function source from PostgreSQL via pg_get_functiondef.
+    #
+    # @param [String] function_name Function name to retrieve
+    # @param [String, nil] schema Schema name (defaults to search path)
+    # @return [String, nil] The function source SQL, or nil if not found
+    def self.pg_function_source(function_name, schema: nil)
+      schema_clause = schema ? "AND n.nspname = #{connection.quote(schema)}" : ''
+      sql = <<~SQL.squish
+        SELECT pg_get_functiondef(p.oid)
+        FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE p.proname = #{connection.quote(function_name)}
+          #{schema_clause}
+        LIMIT 1
+      SQL
+      connection.select_value(sql)
+    end
+
+    # Retrieve function source from MySQL/MariaDB via SHOW CREATE FUNCTION.
+    #
+    # @param [String] function_name Function name to retrieve
+    # @return [String, nil] The function source SQL, or nil if not found
+    def self.mysql_function_source(function_name)
+      row = connection.select_one("SHOW CREATE FUNCTION #{connection.quote_table_name(function_name)}")
+      row&.values&.last
+    rescue ActiveRecord::StatementInvalid
+      nil
+    end
   end
 end
