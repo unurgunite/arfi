@@ -17,7 +17,9 @@ module Arfi
 
     def self.multi_db?: () -> bool
 
-    def self.populate_multiple_db: (verbose: bool) -> void
+    def self.populate_multiple_db: (verbose: bool, ?task_name: String?) -> void
+
+    def self.current_db_config: () -> untyped
 
     def self.populate_db: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, verbose: bool, task_name: String?) -> void
 

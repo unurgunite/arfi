@@ -39,7 +39,7 @@ module Arfi
         raise_unless_supported_adapter(conn)
 
         if connection.nil? && multi_db? && task_name.nil?
-          populate_multiple_db(verbose: verbose)
+          populate_multiple_db(verbose: verbose, task_name: task_short)
         else
           populate_db(conn, verbose: verbose, task_name: task_short)
         end
@@ -75,16 +75,23 @@ module Arfi
 
       # Load functions into all databases in a multi-DB setup.
       #
+      # Saves the original connection and restores it after iterating all configs,
+      # matching the pattern used in `run_with_connection_switch` (db.rake).
+      #
       # @private
       # @param [Boolean] verbose Whether to log each loaded file
+      # @param [String?] task_name Optional task name for logging
       # @return [void]
-      def populate_multiple_db(verbose:)
+      def populate_multiple_db(verbose:, task_name: nil)
+        original = current_db_config
         # steep:ignore:start
         ActiveRecord::Base.configurations.configurations.select { _1.env_name == Rails.env }.each do |config|
           ActiveRecord::Base.establish_connection(config)
-          populate_db(default_connection, verbose: verbose, task_name: nil)
+          populate_db(default_connection, verbose: verbose, task_name: task_name)
         end
         # steep:ignore:end
+      ensure
+        ActiveRecord::Base.establish_connection(original) if original
       end
 
       # Get the default database connection, handling Rails version differences.
@@ -97,6 +104,16 @@ module Arfi
         else
           ActiveRecord::Base.lease_connection
         end
+      end
+
+      # Get the current database config, or nil if no connection is established.
+      #
+      # @private
+      # @return [ActiveRecord::DatabaseConfig, nil] Current database config
+      def current_db_config
+        ActiveRecord::Base.connection_db_config # steep:ignore NoMethod
+      rescue StandardError
+        nil
       end
 
       # Load SQL function files into a single database connection.
