@@ -64,12 +64,20 @@ RSpec.describe Arfi::SqlFunctionLoader do
       allow(configs).to receive(:configs_for).and_return([])
       allow(ActiveRecord::Base).to receive_messages(connection: Object.new, configurations: configs)
       allow(described_class).to receive(:load!)
+      allow(Arfi::SqlTriggerLoader).to receive(:load!)
       load_arfi_tasks
     end
 
     it 'calls SqlFunctionLoader with task_name' do
       Rake::Task['_db:arfi_enhance:db:migrate:animals'].invoke
       expect(described_class).to have_received(:load!).with(
+        task_name: 'db:migrate:animals', connection: anything, verbose: true
+      )
+    end
+
+    it 'calls SqlTriggerLoader with task_name' do
+      Rake::Task['_db:arfi_enhance:db:migrate:animals'].invoke
+      expect(Arfi::SqlTriggerLoader).to have_received(:load!).with(
         task_name: 'db:migrate:animals', connection: anything, verbose: true
       )
     end

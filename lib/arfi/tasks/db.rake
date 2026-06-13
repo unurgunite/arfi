@@ -3,12 +3,12 @@
 require 'rake'
 require 'active_record'
 require 'arfi/sql_function_loader'
+require 'arfi/sql_trigger_loader'
 
 namespace :_db do
   task :arfi_enhance do
-    # For non-suffixed tasks (db:migrate / db:prepare etc),
-    # loader will populate all DBs when multi-db and task_name is nil.
     Arfi::SqlFunctionLoader.load!(verbose: true)
+    Arfi::SqlTriggerLoader.load!(verbose: true)
   end
 end
 
@@ -56,6 +56,11 @@ end
 
 def run_arfi_loader(task)
   Arfi::SqlFunctionLoader.load!(
+    task_name: task.name,
+    connection: ActiveRecord::Base.connection,
+    verbose: true
+  )
+  Arfi::SqlTriggerLoader.load!(
     task_name: task.name,
     connection: ActiveRecord::Base.connection,
     verbose: true

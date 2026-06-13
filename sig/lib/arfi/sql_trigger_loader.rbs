@@ -1,0 +1,45 @@
+module Arfi
+  class SqlTriggerLoader
+    def self.load!: (?task_name: String?, ?connection: ::ActiveRecord::ConnectionAdapters::AbstractAdapter?, ?clear_active_connections: bool, ?verbose: bool) -> void
+
+    private
+
+    def self.default_connection: () -> ::ActiveRecord::ConnectionAdapters::AbstractAdapter
+
+    def self.raise_unless_supported_adapter: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> void
+
+    def self.multi_db?: () -> bool
+
+    def self.populate_multiple_db: (verbose: bool, ?task_name: String?) -> void
+
+    def self.current_db_config: () -> untyped
+
+    def self.populate_db: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, verbose: bool, task_name: String?) -> void
+
+    def self.clear_active_connections_if_needed: (bool clear) -> void
+
+    def self.load_sql_file: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Pathname | String file, bool verbose, String? task_name) -> void
+
+    def self.log_sql_load: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Pathname | String file, String? task_name) -> void
+
+    def self.safe_db_env: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> String
+
+    def self.safe_db_name: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> String
+
+    def self.log: (::ActiveRecord::ConnectionAdapters::AbstractAdapter _conn, String msg) -> void
+
+    def self.sql_files: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn) -> Array[String]
+
+    def self.collect_adapter_sql_files: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Pathname adapter_root) -> Array[sql_file_item]
+
+    def self.collect_postgresql_sql_files: (::Pathname adapter_root) -> Array[sql_file_item]
+
+    def self.collect_adapter_public_sql_files: (::Pathname adapter_root) -> Array[sql_file_item]
+
+    def self.collect_sql: (glob: ::Pathname | String, schema: String, priority: Integer) -> Array[sql_file_item]
+
+    def self.finalize_items: (Array[sql_file_item] items) -> Array[String]
+
+    def self.adapter_root_for: (::ActiveRecord::ConnectionAdapters::AbstractAdapter conn, ::Pathname root) -> ::Pathname
+  end
+end

@@ -5,5 +5,11 @@ module ActiveRecord
     def self.pg_function_exists?: (String function_name) -> bool
 
     def self.mysql_function_exists?: (String function_name) -> bool
+
+    def self.trigger_exists?: (String table, String trigger_name) -> bool
+
+    def self.pg_trigger_exists?: (String table, String trigger_name) -> bool
+
+    def self.mysql_trigger_exists?: (String table, String trigger_name) -> bool
   end
 end

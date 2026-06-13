@@ -3,6 +3,7 @@
 require 'thor'
 require_relative 'commands/init'
 require_relative 'commands/functions'
+require_relative 'commands/triggers'
 
 module Arfi
   # Top-level CLI entrypoint for the `arfi` executable.
@@ -26,6 +27,9 @@ module Arfi
 
     desc 'f_idx [COMMAND]', 'Alias for `arfi functions` (backward compatible).'
     subcommand 'f_idx', Arfi::Commands::Functions
+
+    desc 'triggers [COMMAND]', 'Manage SQL trigger files. Default: list'
+    subcommand 'triggers', Arfi::Commands::Triggers
 
     desc 'version', 'Print the version'
     # Print the gem version to stdout.

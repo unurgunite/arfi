@@ -1,0 +1,23 @@
+module Arfi
+  module Commands
+    module TriggersCreation : Arfi::Commands::Triggers
+      private
+
+      def ensure_dirs!: (adapter: String?, schema: String?) -> void
+
+      def build_sql_trigger: (String? schema, String trigger_name, original_ref: String) -> String
+
+      def build_from_file: (String? schema, String trigger_name, original_ref: String) -> String
+
+      def write_file: (String? schema, String trigger_name, String content) -> void
+
+      def remove_trigger_file: (String? schema, String trigger_name) -> void
+
+      def evaluate_template: (String trigger_name, String? schema_name, String qualified_name, String original_ref) -> untyped
+
+      def build_postgresql_trigger_skeleton: (String? schema, String trigger_name) -> String
+
+      def build_mysql_trigger_skeleton: (String trigger_name) -> String
+    end
+  end
+end
